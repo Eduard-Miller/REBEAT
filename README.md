@@ -17,6 +17,8 @@ uv run python app.py
 The app lets you upload audio, listen to it, tune analysis parameters, and inspect detected repeat groups.
 It also shows a second plot with the self-similarity matrix and highlighted detected diagonals.
 For looped game music, REBEAT attempts to detect a stable global loop period and run heavy analysis on one loop only, then maps detected segments back across the full track with time offsets.
+When loop optimization is active, the app shows an extra spectrogram panel for the analyzed loop segment.
+You can select a `pattern_id` and build a combined playback reel that concatenates all detected instances of that pattern in chronological order.
 
 ## Run CLI
 

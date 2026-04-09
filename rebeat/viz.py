@@ -145,3 +145,86 @@ def plot_onset_autocorrelation(
             va="bottom",
         )
     return fig
+
+
+def plot_analyzed_window_spectrogram(
+    y: np.ndarray,
+    sr: int,
+    analyzed_duration_sec: float,
+    loop_optimization_applied: bool,
+    patterns: tuple[PatternGroup, ...],
+    hop_length: int = 512,
+    n_fft: int = 2048,
+) -> plt.Figure:
+    fig, ax = plt.subplots(figsize=(7.5, 3.6), constrained_layout=True)
+    if not loop_optimization_applied:
+        ax.text(
+            0.5,
+            0.5,
+            "Loop optimization not applied\n(full track was analyzed)",
+            ha="center",
+            va="center",
+            fontsize=11,
+        )
+        ax.set_axis_off()
+        return fig
+
+    analyzed_samples = int(round(analyzed_duration_sec * sr))
+    if analyzed_samples <= 0:
+        ax.text(
+            0.5,
+            0.5,
+            "No analyzed loop segment available",
+            ha="center",
+            va="center",
+            fontsize=11,
+        )
+        ax.set_axis_off()
+        return fig
+
+    segment = y[: min(len(y), analyzed_samples)]
+    stft = librosa.stft(y=segment, n_fft=n_fft, hop_length=hop_length)
+    db = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
+    img = librosa.display.specshow(
+        db,
+        sr=sr,
+        hop_length=hop_length,
+        x_axis="time",
+        y_axis="hz",
+        ax=ax,
+        cmap="magma",
+    )
+    fig.colorbar(img, ax=ax, format="%+2.0f dB")
+    ax.set_title("Analyzed Loop Segment Spectrogram")
+
+    legend_handles = []
+    legend_labels = []
+    for pattern in patterns:
+        color = _pattern_color(pattern.pattern_id)
+        has_visible = False
+        for seg in pattern.segments:
+            if seg.end_sec <= 0 or seg.start_sec >= analyzed_duration_sec:
+                continue
+            start = max(0.0, seg.start_sec)
+            end = min(analyzed_duration_sec, seg.end_sec)
+            if end <= start:
+                continue
+            ax.axvspan(start, end, color=color)
+            has_visible = True
+        if has_visible:
+            handle = plt.Rectangle((0, 0), 1, 1, color=color)
+            legend_handles.append(handle)
+            legend_labels.append(f"Pattern {pattern.pattern_id:02d}")
+
+    if legend_handles:
+        ax.legend(
+            legend_handles,
+            legend_labels,
+            loc="upper right",
+            frameon=True,
+            facecolor="white",
+            framealpha=0.8,
+            ncol=2,
+            fontsize=8,
+        )
+    return fig
