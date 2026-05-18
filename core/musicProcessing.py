@@ -3,47 +3,64 @@ import librosa
 from sklearn.metrics.pairwise import cosine_similarity
 from sortedcontainers import SortedSet
 
-def calc_STFT(path: str, sr, duration, hop_length, win_length, window_type) -> np.ndarray:
-    y, _ = librosa.load(path, sr=sr, duration=duration)
-    stft_result = librosa.stft(y, hop_length=hop_length, win_length=win_length, window=window_type)
-    return stft_result
-
-def calc_magnitude(stft: np.ndarray) -> np.ndarray:
-    return np.abs(stft)
-
-def calc_iSTFT(data: np.ndarray, hop_length, win_length, window_type) -> np.ndarray:
-    return librosa.istft(data, hop_length=hop_length, win_length=win_length, window=window_type)
-
-def calc_sim_matrix(data: np.ndarray) -> np.ndarray:
-    """
-    Calculates the similarity matrix S from the magnitude spectrogram V.
-    V shape expected: (num_frequency_bins, num_time_frames)
-    Output S shape: (num_time_frames, num_time_frames)
-    """
-    return cosine_similarity(data.T).astype(np.float32)
-
-def get_top_k_similar_frames(sim_matrix: np.ndarray, frame_index: int, k: int) -> SortedSet:
-    frame_similarities = sim_matrix[frame_index]
-    top_k_indices = np.argsort(frame_similarities)[::-1][1:k+1]  # Exclude self-similarity
-    return SortedSet(top_k_indices)
-
-def median_filter(data: np.ndarray, frames: SortedSet) -> np.ndarray:
-    # Apply width wise median filtering (per frequency bin) to the specified frames and 0 out the rest
-    filtered_data = np.zeros_like(data)
-    median = np.median(data[list(frames)], axis=0)
-    for frame in frames:
-        filtered_data[frame] = median
-    return filtered_data
-
-def calc_mask(V: np.ndarray, W: np.ndarray) -> np.ndarray:
-    # Calculate the mask for the given V and W matrices
-    if W.shape != V.shape:
-        raise ValueError("W and V must have the same shape for mask calculation.")
+class MusicProcessingProvider:
+    path = ""
+    stft = None
+    magnitude = None
+    sim_matrix = None
     
-    W_marked = np.minimum(W, V) # represents repeating model for the "background" in REPET
-    M = W_marked/(V + 1e-10) # Avoid division by zero, values in M should be between 0 and 1
     
-    return M
+    def __init__(self, path: str, duration: float, hop_length: int, win_length: int, window_type: str):
+        self.path = path
+        self.stft = self.calc_STFT(duration, hop_length, win_length, window_type)
+        self.magnitude = self.calc_magnitude(self.stft)
+        self.sim_matrix = self.calc_sim_matrix(self.magnitude)
 
-def apply_mask(data: np.ndarray, M: np.ndarray) -> np.ndarray:
-    return data * M
+    def calc_STFT(self, duration: float, hop_length: int, win_length: int, window_type: str) -> np.ndarray:
+        y, _ = librosa.load(self.path, sr=self.sr, duration=duration)
+        stft_result = librosa.stft(y, hop_length=hop_length, win_length=win_length, window=window_type)
+        return stft_result
+
+    def calc_magnitude(self) -> np.ndarray:
+        return np.abs(self.stft)
+
+    def calc_iSTFT(self, data: np.ndarray, hop_length: int, win_length: int, window_type: str) -> np.ndarray:
+        return librosa.istft(data, hop_length=hop_length, win_length=win_length, window=window_type)
+
+    def calc_sim_matrix(self) -> np.ndarray:
+        """
+        Calculates the similarity matrix S from the magnitude spectrogram V.
+        V shape expected: (num_frequency_bins, num_time_frames)
+        Output S shape: (num_time_frames, num_time_frames)
+        """
+        return cosine_similarity(self.magnitude.T).astype(np.float32)
+
+    def get_top_k_similar_frames(self, frame_index: int, k: int) -> SortedSet:
+        frame_similarities = self.sim_matrix[frame_index]
+        top_k_indices = np.argsort(frame_similarities)[::-1][1:k+1]  # Exclude self-similarity
+        return SortedSet(top_k_indices)
+
+    def median_filter(self, frames: SortedSet) -> np.ndarray:
+        # Apply width wise median filtering (per frequency bin) to the specified frames and 0 out the rest
+        filtered_data = np.zeros_like(self.magnitude)
+        median = np.median(self.magnitude[list(frames)], axis=0)
+        for frame in frames:
+            filtered_data[frame] = median
+        return filtered_data
+
+    def calc_median_frame(self, frames: SortedSet) -> np.ndarray:
+        return np.median(self.magnitude[list(frames)], axis=0)
+
+    def calc_mask(self, W: np.ndarray) -> np.ndarray:
+        V = self.magnitude
+        # Calculate the mask for the given V and W matrices
+        if W.shape != V.shape:
+            raise ValueError("W and V must have the same shape for mask calculation.")
+        
+        W_marked = np.minimum(W, V) # represents repeating model for the "background" in REPET
+        M = W_marked/(V + 1e-10) # Avoid division by zero, values in M should be between 0 and 1
+        
+        return M
+
+    def apply_mask(self, data: np.ndarray, M: np.ndarray) -> np.ndarray:
+        return data * M
