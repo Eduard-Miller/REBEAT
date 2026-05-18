@@ -20,6 +20,16 @@ For looped game music, REBEAT attempts to detect a stable global loop period and
 When loop optimization is active, the app shows an extra spectrogram panel for the analyzed loop segment.
 You can select a `pattern_id` and build a combined playback reel that concatenates all detected instances of that pattern in chronological order.
 
+## Component Activity Analysis App
+
+This separate Gradio app takes a full song and a component stem, finds non-silent intervals in the component using a dBFS threshold (returned as sample index pairs), then analyzes the magnitude distribution on the full-song STFT using those intervals. It also builds a median-based magnitude mask to extract a stem.
+
+Run it:
+
+```bash
+uv run python app_component.py
+```
+
 ## Run CLI
 
 ```bash
