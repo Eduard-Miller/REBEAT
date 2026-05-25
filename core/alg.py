@@ -13,6 +13,11 @@ class AlgProvider:
     population: list[Individual]
     individual_bin_count: int # number of tuples in genome of all individuals 
     individual_max_bin_lenght: int
+    mutation_probability: float
+    crossover_method: str
+    crossover_probability: float
+    selection_method: str
+    sim_metric: str
     
     # metrics to track
     diversity: np.ndarray = np.array([], dtype=np.float16)
@@ -20,7 +25,7 @@ class AlgProvider:
     avg_fitness: np.ndarray = np.array([], dtype=np.float16)
     worst_fitness: np.ndarray = np.array([], dtype=np.float16)
         
-    def __init__(self, mp: mp.MusicProcessingProvider, random_seed: int = 0, num_generations: int = 50, population_size: int = 100, individual_bin_count: int = 20):
+    def __init__(self, mp: mp.MusicProcessingProvider, random_seed: int, num_generations: int, population_size: int, individual_bin_count: int, mutation_probability: float, crossover_probability: float, crossover_method: str, selection_method: str, sim_metric: str):
         self.mp = mp
         self.individual_max_bin_lenght = mp.sim_matrix.shape[0]
         self.random_seed = random_seed
@@ -28,7 +33,12 @@ class AlgProvider:
         self.population_size = population_size
         self.individual_bin_count = individual_bin_count
         self.population = []
-
+        self.mutation_probability = mutation_probability
+        self.crossover_probability = crossover_probability
+        self.crossover_method = crossover_method
+        self.selection_method = selection_method
+        self.sim_metric = sim_metric
+        
     def _initialize_random_pop(self, population_size: int, min_len: int, max_len: int):
         np.random.seed(self.random_seed)
         for _ in range(population_size):
@@ -86,10 +96,15 @@ class AlgProvider:
         return dot_product / (norm_A * norm_B)
         
 
-    def selection(self):
-        pass
+    def selection(self, population: list[Individual]) -> Individual:
+        if self.selection_method == "tournament":
+            return self._tournament_selection(population)
+        elif self.selection_method == "roulette":
+            return self._roulette_selection(population)
+        else:
+            raise ValueError(f"Unknown selection method: {self.selection_method}")
     
-    def _tournament_selection(self, population: list[Individual], k: int) -> Individual:
+    def _tournament_selection(self, population: list[Individual], k: int = 5) -> Individual:
         np.random.seed(self.random_seed)
         tournament = np.random.choice(population, size=k, replace=False)
         tournament.sort(key=lambda ind: ind.fitness, reverse=True) # sort by fitness
@@ -106,9 +121,16 @@ class AlgProvider:
         selected_index = np.random.choice(len(population), p=probabilities)
         return population[selected_index]
     
-    def crossover(self):
-        pass
-    
+    def crossover(self, parentA: Individual, parentB: Individual) -> tuple[Individual, Individual]:
+        if self.crossover_method == "single_point":
+            return self._single_point_crossover(parentA, parentB)
+        elif self.crossover_method == "two_point":
+            return self._two_point_crossover(parentA, parentB)
+        elif self.crossover_method == "rrc":
+            return self._rrc_crossover(parentA, parentB)
+        else:
+            raise ValueError(f"Unknown crossover method: {self.crossover_method}")
+
     def _single_point_crossover(self, parentA: Individual, parentB: Individual) -> tuple[Individual, Individual]:
         np.random.seed(self.random_seed)
         crossover_point = np.random.randint(1, self.individual_bin_count - 1)
@@ -147,8 +169,20 @@ class AlgProvider:
         return Individual(childA_genome, self.individual_max_bin_lenght), Individual(childB_genome, self.individual_max_bin_lenght)
          
 
-    def mutation(self):
-        pass
+    def mutation(self, individual: Individual):
+        # mutation probability is shared across all mutation types, multiple mutations can occur in one pass
+        np.random.seed(self.random_seed)
+        prob = self.mutation_probability/3 # divide by number of mutation types 
+        
+        if np.random.rand() < prob:
+            self._shift_mutation(individual)
+        np.random.seed(self.random_seed + 1) # reroll random seed
+        if np.random.rand() < prob:
+            self._length_mutation(individual)
+        np.random.seed(self.random_seed + 2) # reroll random seed
+        if np.random.rand() < prob:
+            self._toggle_mutation(individual, min_length=-10, max_length=10)    
+        
     
     def _shift_mutation(self, individual: Individual):
         np.random.seed(self.random_seed)
