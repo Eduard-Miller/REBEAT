@@ -1,7 +1,6 @@
 import numpy as np
 import librosa
 from sklearn.metrics.pairwise import cosine_similarity
-from sortedcontainers import SortedSet
 
 class MusicProcessingProvider:
     path = ""
@@ -35,21 +34,21 @@ class MusicProcessingProvider:
         """
         return cosine_similarity(self.magnitude.T).astype(np.float32)
 
-    def get_top_k_similar_frames(self, frame_index: int, k: int) -> SortedSet:
+    def get_top_k_similar_frames(self, frame_index: int, k: int) -> np.ndarray:
         frame_similarities = self.sim_matrix[frame_index]
         top_k_indices = np.argsort(frame_similarities)[::-1][1:k+1]  # Exclude self-similarity
-        return SortedSet(top_k_indices)
+        return top_k_indices
 
-    def median_filter(self, frames: SortedSet) -> np.ndarray:
+    def median_filter(self, frames: np.ndarray) -> np.ndarray:
         # Apply width wise median filtering (per frequency bin) to the specified frames and 0 out the rest
         filtered_data = np.zeros_like(self.magnitude)
-        median = np.median(self.magnitude[list(frames)], axis=0)
+        median = np.median(self.magnitude[frames], axis=0)
         for frame in frames:
             filtered_data[frame] = median
         return filtered_data
 
-    def calc_median_frame(self, frames: SortedSet) -> np.ndarray:
-        return np.median(self.magnitude[list(frames)], axis=0)
+    def calc_median_frame(self, frames: np.ndarray) -> np.ndarray:
+        return np.median(self.magnitude[frames], axis=0)
 
     def calc_mask(self, W: np.ndarray) -> np.ndarray:
         V = self.magnitude
