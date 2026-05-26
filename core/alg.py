@@ -118,9 +118,15 @@ class AlgProvider:
         '''
         compares the median frames of two individuals and returns the cosine similarity between them.
         '''
-        median_A = self.mp.calc_median_frame(np.flatnonzero(individualA.genome_bin))
-        median_B = self.mp.calc_median_frame(np.flatnonzero(individualB.genome_bin))
-        
+        if individualA.fenotype is None:
+            median_A = self.mp.calc_median_frame(np.flatnonzero(individualA.genome_bin))
+        else:
+            median_A = individualA.fenotype
+        if individualB.fenotype is None:
+            median_B = self.mp.calc_median_frame(np.flatnonzero(individualB.genome_bin))
+        else:
+            median_B = individualB.fenotype
+
         # Calculate cosine similarity
         dot_product = np.dot(median_A, median_B)
         norm_A = np.linalg.norm(median_A)
