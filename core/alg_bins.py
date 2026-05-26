@@ -13,13 +13,15 @@ class AlgProvider:
     # parameters
     num_generations: int
     population_size: int
-    individual_bin_count: int # number of tuples in genome of all individuals 
-    individual_max_bin_lenght: int
     clearing_interval: int
     clearing_radius: float
     mutation_probability: float
     crossover_probability: float
     niche_capacity: int
+    
+    
+    individual_bin_count: int # number of tuples in genome of all individuals 
+    individual_max_bin_lenght: int # total number of frames in song stored for easy access
     
     # experiment parameters
     population_initialization_method: str
@@ -43,13 +45,14 @@ class AlgProvider:
         
         self.num_generations = num_generations
         self.population_size = population_size
-        self.individual_bin_count = individual_bin_count
-        self.individual_max_bin_lenght = mp.sim_matrix.shape[0]
         self.clearing_interval = clearing_interval
         self.clearing_radius = clearing_radius
         self.mutation_probability = mutation_probability
         self.crossover_probability = crossover_probability
         self.niche_capacity = niche_capacity
+        
+        self.individual_bin_count = individual_bin_count
+        self.individual_max_bin_lenght = mp.sim_matrix.shape[0]
         
         self.population_initialization_method = population_initialization_method
         self.crossover_method = crossover_method
@@ -279,7 +282,8 @@ class AlgProvider:
         n_frames = len(frames)
         
         if n_frames < 2:
-            return 0.0
+            individual.update_individual(fitness=0.0)
+            return
 
         # Cohesion (Average pairwise similarity)
         sub_sim_matrix = self.mp.sim_matrix[np.ix_(frames, frames)]
@@ -348,10 +352,6 @@ class AlgProvider:
         avg_similarity = np.mean(sim_values) if len(sim_values) > 0 else 0.0
         
         self.diversity = np.append(self.diversity, 1 - avg_similarity)
-        
-        
-        # reset memo for next time clearing is called, since the population has changed
-        self.similarity_memo = np.full(self.population_size, self.population_size, np.nan, dtype=np.float16)
         
         return population
         
