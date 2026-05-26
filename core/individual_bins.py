@@ -1,6 +1,6 @@
 import numpy as np
 
-class Individual:
+class Individual_bins():
     max_bin_lenght: int
     genome: list[tuple[int, int]] # list of (index i and length l) will be sorted on index i
     genome_bin: np.ndarray # binary representation of the genome (1d array np.bool)

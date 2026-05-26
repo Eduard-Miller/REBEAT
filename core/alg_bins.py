@@ -3,7 +3,8 @@ from joblib import Parallel, delayed
 
 
 import core.musicProcessing as mp
-from core.individual import Individual, binary_to_bins
+from core.individual_bins import Individual_bins as Individual
+from core.individual_bins import binary_to_bins
 
 class AlgProvider:
     mp: mp.MusicProcessingProvider
