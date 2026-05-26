@@ -1,0 +1,149 @@
+import numpy as np
+from abc import ABC, abstractmethod
+
+from core.individual import Individual
+import core.musicProcessing as mp
+
+class Alg(ABC):
+    mp: mp.MusicProcessingProvider
+    
+    # parameters
+    num_generations: int
+    population_size: int
+    clearing_interval: int
+    clearing_radius: float
+    mutation_probability: float
+    crossover_probability: float
+    niche_capacity: int
+    
+    # experiment parameters
+    population_initialization_method: str
+    crossover_method: str
+    selection_method: str
+    sim_metric: str
+    
+    population: list[Individual]
+    similarity_memo: np.ndarray # memoization for similarity calculations, to avoid redundant calculations during clearing
+    
+    # metrics to track
+    diversity: np.ndarray
+    removed_by_clearing: np.ndarray
+    best_fitness: np.ndarray
+    avg_fitness: np.ndarray
+    worst_fitness: np.ndarray
+    
+    @abstractmethod
+    def initialize_population(self):
+        pass
+    
+    @abstractmethod
+    def similarity(self, individualA: Individual, individualB: Individual) -> float:
+        pass
+    
+    @abstractmethod
+    def selection(self, population: list[Individual]) -> Individual:
+        pass
+    
+    @abstractmethod
+    def crossover(self, parentA: Individual, parentB: Individual) -> tuple[Individual, Individual]:
+        pass
+    
+    @abstractmethod
+    def mutation(self, individual: Individual):
+        pass
+    
+    @abstractmethod
+    def calc_fitness_single(self, individual: Individual):
+        pass
+    
+    def calc_fitness_population(self):
+        # Calculate fitness for all individuals in the population
+        for individual in self.population:
+            self.calc_fitness_single(individual)
+        
+    def clearing(self, population: list[Individual]):
+        # sort the pop by fitness
+        population.sort(key=lambda ind: ind.fitness, reverse=True)
+        # reset memo since population order changed
+        self.similarity_memo = np.full((len(population), len(population)), np.nan, dtype=np.float16)
+        # keep track of which individuals have been cleared
+        cleared = np.zeros(len(population), dtype=bool)
+        remove_indices: set[int] = set()
+        
+        for i in range(len(population)):
+            if cleared[i]:
+                continue
+            else:
+                niche_count = 0
+                for j in range(i, len(population)):
+                    if j in remove_indices:
+                        continue
+
+                    if i == j:
+                        similarity = 1.0
+                    else:
+                        similarity = self.similarity_memo[i, j]
+                        if np.isnan(similarity):
+                            similarity = self.similarity(population[i], population[j])
+                            self.similarity_memo[i, j] = similarity
+                            self.similarity_memo[j, i] = similarity
+
+                    if similarity >= self.clearing_radius:
+                        if niche_count < self.niche_capacity:
+                            if i != j:
+                                population[j].update_individual(fitness=0.0) # Clear the fitness of similar individuals, but not the niche winner
+                            cleared[j] = True
+                            niche_count += 1
+                        else:
+                            remove_indices.add(j)
+
+        if remove_indices:
+            population = [ind for idx, ind in enumerate(population) if idx not in remove_indices]
+
+        # log stuff
+        self.removed_by_clearing = np.append(self.removed_by_clearing, len(remove_indices)) # individuals removed by clearing
+        
+        # average similarity in similarity memo as a diversity metric, excluding NaN values and self-similarity
+        sim_values = self.similarity_memo[~np.isnan(self.similarity_memo)]
+        sim_values = sim_values[sim_values < 1.0] # exclude self-similarity
+        avg_similarity = np.mean(sim_values) if len(sim_values) > 0 else 0.0
+        
+        self.diversity = np.append(self.diversity, 1 - avg_similarity)
+        
+        return population
+        
+    
+    def run(self):
+        self.initialize_population()
+        self.calc_fitness_population()
+        
+        for generation in range(self.num_generations):
+            new_population = []
+            
+            while len(new_population) < self.population_size:
+                parentA = self.selection(self.population)
+                parentB = self.selection(self.population)
+                
+                childA, childB = self.crossover(parentA, parentB)
+                
+                self.mutation(childA)
+                self.mutation(childB)
+                
+                self.calc_fitness_single(childA)
+                self.calc_fitness_single(childB)
+                
+                new_population.extend([childA, childB])
+                
+            # ensure new population does not exceed population size (can only happen if population size is odd, since we add 2 children at a time)
+            new_population = new_population[:self.population_size]
+            
+            if generation % self.clearing_interval == 0:
+                new_population = self.clearing(new_population)
+                
+            self.population = new_population
+
+            # log pop fitness to track progress
+            fitness_values = [ind.fitness for ind in self.population]
+            self.best_fitness = np.append(self.best_fitness, np.max(fitness_values))
+            self.avg_fitness = np.append(self.avg_fitness, np.mean(fitness_values))
+            self.worst_fitness = np.append(self.worst_fitness, np.min(fitness_values))
