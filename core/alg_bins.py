@@ -6,7 +6,7 @@ import core.musicProcessing as mp
 from core.individual_bins import Individual_bins as Individual
 from core.individual_bins import binary_to_bins
 
-class AlgProvider:
+class AlgBins:
     mp: mp.MusicProcessingProvider
     random_seed: int
     
