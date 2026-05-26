@@ -239,7 +239,7 @@ class AlgProvider:
         new_genome = individual.genome.copy()
         new_genome[random_bin_index] = (new_i, new_genome[random_bin_index][1]) # keep the same length, just shift the index
         
-        individual.update_genome(new_genome)
+        individual.update_individual(genome=new_genome)
         
     
     def _length_mutation(self, individual: Individual):
@@ -255,7 +255,7 @@ class AlgProvider:
         new_genome = individual.genome.copy()
         new_genome[random_bin_index] = (new_genome[random_bin_index][0], new_length) # keep the same index, just change the length
         
-        individual.update_genome(new_genome)
+        individual.update_individual(genome=new_genome)
 
     def _toggle_mutation(self, individual: Individual, min_length: int, max_length: int):
         # Toggles a bin to have length 0 (effectively removing it) or from length 0 to a random length (effectively adding it back in)..
@@ -271,7 +271,7 @@ class AlgProvider:
         new_genome = individual.genome.copy()
         new_genome[random_bin_index] = (new_genome[random_bin_index][0], new_length) # keep the same index, just toggle the length
         
-        individual.update_genome(new_genome)
+        individual.update_individual(genome=new_genome)
 
     def calc_fitness_single(self, individual: Individual):
         frames = np.flatnonzero(individual.genome_bin)
@@ -291,7 +291,7 @@ class AlgProvider:
         
         fitness = cohesion * length_reward
         
-        individual.update_fitness(fitness)
+        individual.update_individual(fitness=fitness)
     
     def calc_fitness_population(self):
         # Calculate fitness for all individuals in the population in parallel
@@ -329,7 +329,7 @@ class AlgProvider:
                     if similarity >= self.clearing_radius:
                         if niche_count < self.niche_capacity:
                             if i != j:
-                                population[j].update_fitness(0.0) # Clear the fitness of similar individuals, but not the niche winner
+                                population[j].update_individual(fitness=0.0) # Clear the fitness of similar individuals, but not the niche winner
                             cleared[j] = True
                             niche_count += 1
                         else:

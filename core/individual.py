@@ -14,16 +14,16 @@ class Individual:
         self.fitness = None
         self.fenotype = None
         
-    def update_individual(self, genome: list[tuple[int, int]], fenotype: np.ndarray, fitness: float):
+    def update_individual(self, genome: list[tuple[int, int]]=None, fenotype: np.ndarray=None, fitness: float=None):
         if genome is not None:
-            self.update_genome(genome)
-            self.update_genome_bin()
+            self._update_genome(genome)
+            self._update_genome_bin()
         if fenotype is not None:
-            self.update_fenotype(fenotype)
+            self._update_fenotype(fenotype)
         if fitness is not None:
-            self.update_fitness(fitness)
+            self._update_fitness(fitness)
     
-    def update_genome_bin(self):
+    def _update_genome_bin(self):
         '''
         Converts the genome (list of tuples) into a binary representation (1d numpy array of bools). This allows for efficient similarity calculations using bitwise operations.
         '''
@@ -38,13 +38,13 @@ class Individual:
                 binary[bin[0]:] = True # if the bin exceeds the max length, just set all remaining bits to 1
         self.genome_bin = binary
             
-    def update_fenotype(self, fenotype: np.ndarray): # calculated externally
+    def _update_fenotype(self, fenotype: np.ndarray): # calculated externally
         self.fenotype = fenotype
         
-    def update_fitness(self, fitness: float): # calculated externally
+    def _update_fitness(self, fitness: float): # calculated externally
         self.fitness = fitness
         
-    def update_genome(self, genome: list[tuple[int, int]]): # calculated externally
+    def _update_genome(self, genome: list[tuple[int, int]]): # calculated externally
         self.genome = genome
         
         
