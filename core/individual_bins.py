@@ -1,11 +1,10 @@
 import numpy as np
 
-class Individual_bins():
+from core.individual import Individual
+
+class Individual_bins(Individual):
     max_bin_lenght: int
-    genome: list[tuple[int, int]] # list of (index i and length l) will be sorted on index i
     genome_bin: np.ndarray # binary representation of the genome (1d array np.bool)
-    fitness: float
-    fenotype: np.ndarray # median frame of the genome, stored to avoid redundant calculations during similarity comparisons
     
     def __init__(self, genome: list[tuple[int, int]], max_bin_lenght: int):
         self.max_bin_lenght = max_bin_lenght
