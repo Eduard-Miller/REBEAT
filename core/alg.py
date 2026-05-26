@@ -224,7 +224,7 @@ class AlgProvider:
     def _shift_mutation(self, individual: Individual):
         np.random.seed(self.random_seed)
         random_bin_index = np.random.randint(0, len(individual.genome))
-        shift_amount = np.random.normal(loc=individual.genome[random_bin_index][0]+individual.genome[random_bin_index][1]/2, scale=5) # Shift around the center of the bin with a standard deviation of 5 frames
+        shift_amount = np.random.normal(loc=0, scale=5) # Shift around the center of the bin with a standard deviation of 5 frames
         shift_amount = np.floor(shift_amount).astype(int)
         
         #ensure i doesn't go out of bounds
