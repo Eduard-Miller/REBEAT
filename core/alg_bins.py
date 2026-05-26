@@ -43,14 +43,19 @@ class AlgBins(Alg):
     
     def initialize_population(self):
         if self.population_initialization_method == "random":
-            self._initialize_random_pop(self.population_size, min_len=1, max_len=10)
+            self._initialize_random_pop(self.population_size)
         elif self.population_initialization_method == "elite":
-            self._initialize_elite_pop(self.population_size, k=100)
+            self._initialize_elite_pop(self.population_size, k=self.individual_max_bin_lenght//10) # top 10%
         else:
             raise ValueError(f"Unknown population initialization method: {self.population_initialization_method}")
         
         
-    def _initialize_random_pop(self, population_size: int, min_len: int, max_len: int):
+    def _initialize_random_pop(self, population_size: int):
+        min_total_coverage = 0.01
+        max_total_coverage = 0.1
+        min_len = max(1, int(np.floor((min_total_coverage * self.individual_max_bin_lenght) / self.individual_bin_count)))
+        max_len = max(min_len + 1, int(np.ceil((max_total_coverage * self.individual_max_bin_lenght) / self.individual_bin_count)))
+        
         for _ in range(population_size):
             new_genome = [(np.random.randint(0, self.individual_max_bin_lenght), np.random.randint(min_len, max_len + 1)) for _ in range(self.individual_bin_count)]
             new_genome.sort(key=lambda x: x[0]) # sort genome by index
@@ -73,6 +78,7 @@ class AlgBins(Alg):
             genome_bin[top_k_indices] = True
 
             genome = binary_to_bins(genome_bin, self.individual_max_bin_lenght)
+            genome.sort(key=lambda x: x[0]) # sort genome by index
 
             return Individual_bins(genome, self.individual_max_bin_lenght)
 
@@ -138,6 +144,9 @@ class AlgBins(Alg):
         childA_genome = parentA.genome[:crossover_point] + parentB.genome[crossover_point:]
         childB_genome = parentB.genome[:crossover_point] + parentA.genome[crossover_point:]
         
+        childA_genome.sort(key=lambda x: x[0]) # sort genome by index
+        childB_genome.sort(key=lambda x: x[0]) # sort genome by index
+        
         return Individual_bins(childA_genome, self.individual_max_bin_lenght), Individual_bins(childB_genome, self.individual_max_bin_lenght)
         
         
@@ -147,6 +156,9 @@ class AlgBins(Alg):
         
         childA_genome = parentA.genome[:point1] + parentB.genome[point1:point2] + parentA.genome[point2:]
         childB_genome = parentB.genome[:point1] + parentA.genome[point1:point2] + parentB.genome[point2:]
+        
+        childA_genome.sort(key=lambda x: x[0]) # sort genome by index
+        childB_genome.sort(key=lambda x: x[0]) # sort genome by index
         
         return Individual_bins(childA_genome, self.individual_max_bin_lenght), Individual_bins(childB_genome, self.individual_max_bin_lenght)
     
@@ -163,6 +175,9 @@ class AlgBins(Alg):
         
         childA_genome = binary_to_bins(childA_bin, self.individual_max_bin_lenght)
         childB_genome = binary_to_bins(childB_bin, self.individual_max_bin_lenght)
+        
+        childA_genome.sort(key=lambda x: x[0]) # sort genome by index
+        childB_genome.sort(key=lambda x: x[0]) # sort genome by index
         
         return Individual_bins(childA_genome, self.individual_max_bin_lenght), Individual_bins(childB_genome, self.individual_max_bin_lenght)
          
@@ -190,6 +205,8 @@ class AlgBins(Alg):
         new_genome = individual.genome.copy()
         new_genome[random_bin_index] = (new_i, new_genome[random_bin_index][1]) # keep the same length, just shift the index
         
+        new_genome.sort(key=lambda x: x[0]) # sort genome by index
+    
         individual.update_individual(genome=new_genome)
         
     
