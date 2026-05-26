@@ -40,19 +40,22 @@ class AlgBins(Alg):
         self.avg_fitness = np.array([], dtype=np.float16)
         self.worst_fitness = np.array([], dtype=np.float16)
     
+    
     def initialize_population(self):
         if self.population_initialization_method == "random":
             self._initialize_random_pop(self.population_size, min_len=1, max_len=10)
         elif self.population_initialization_method == "elite":
-            self._initialize_elite_pop(self.population_size, k=5)
+            self._initialize_elite_pop(self.population_size, k=100)
         else:
             raise ValueError(f"Unknown population initialization method: {self.population_initialization_method}")
+        
         
     def _initialize_random_pop(self, population_size: int, min_len: int, max_len: int):
         for _ in range(population_size):
             new_genome = [(np.random.randint(0, self.individual_max_bin_lenght), np.random.randint(min_len, max_len + 1)) for _ in range(self.individual_bin_count)]
             new_genome.sort(key=lambda x: x[0]) # sort genome by index
             self.population.append(Individual_bins(new_genome, self.individual_max_bin_lenght))
+          
             
     def _initialize_elite_pop(self, population_size: int, k: int):
         '''
@@ -75,6 +78,7 @@ class AlgBins(Alg):
 
         self.population = [build_individual(frame) for frame in frames]
     
+    
     def similarity(self, individualA: Individual, individualB: Individual) -> float:
         if self.sim_metric == "jaccard":
             return self._similarity_Jaccard(individualA, individualB)
@@ -83,6 +87,7 @@ class AlgBins(Alg):
         else:
             raise ValueError(f"Unknown similarity metric: {self.sim_metric}")
 
+
     def _similarity_Jaccard(self, individualA: Individual_bins, individualB: Individual_bins) -> float:
         '''
         calculates the Jaccard similarity between two individuals
@@ -90,6 +95,7 @@ class AlgBins(Alg):
         intersection = np.sum(individualA.genome_bin & individualB.genome_bin)
         union = np.sum(individualA.genome_bin | individualB.genome_bin)
         return intersection / union if union != 0 else 0
+    
     
     def _similarity_fenotype(self, individualA: Individual_bins, individualB: Individual_bins) -> float:
         '''
@@ -110,32 +116,7 @@ class AlgBins(Alg):
         norm_B = np.linalg.norm(median_B)
         
         return dot_product / (norm_A * norm_B)
-        
-
-    def selection(self, population: list[Individual]) -> Individual:
-        if self.selection_method == "tournament":
-            return self._tournament_selection(population)
-        elif self.selection_method == "roulette":
-            return self._roulette_selection(population)
-        else:
-            raise ValueError(f"Unknown selection method: {self.selection_method}")
     
-    def _tournament_selection(self, population: list[Individual_bins], k: int = 5) -> Individual_bins:
-        if len(population) < k:
-            raise ValueError(f"Tournament size k={k} cannot be larger than the population size {len(population)}")
-        tournament = np.random.choice(population, size=k, replace=False)
-        tournament.sort(key=lambda ind: ind.fitness, reverse=True) # sort by fitness
-        return tournament[0] # return the fittest individual in the tournament
-    
-    def _roulette_selection(self, population: list[Individual_bins]) -> Individual_bins:
-        fitnesses = np.array([ind.fitness for ind in population])
-        total_fitness = np.sum(fitnesses)
-        if total_fitness == 0:
-            probabilities = np.ones(len(population)) / len(population) # Avoid division by zero, assign equal probabilities
-        else:
-            probabilities = fitnesses / total_fitness
-        selected_index = np.random.choice(len(population), p=probabilities)
-        return population[selected_index]
     
     def crossover(self, parentA: Individual, parentB: Individual) -> tuple[Individual, Individual]:
         if np.random.rand() < self.crossover_probability:
@@ -150,6 +131,7 @@ class AlgBins(Alg):
         else:
             return parentA, parentB # no crossover, return parents as children
 
+
     def _single_point_crossover(self, parentA: Individual_bins, parentB: Individual_bins) -> tuple[Individual_bins, Individual_bins]:
         crossover_point = np.random.randint(1, self.individual_bin_count - 1)
         
@@ -157,6 +139,7 @@ class AlgBins(Alg):
         childB_genome = parentB.genome[:crossover_point] + parentA.genome[crossover_point:]
         
         return Individual_bins(childA_genome, self.individual_max_bin_lenght), Individual_bins(childB_genome, self.individual_max_bin_lenght)
+        
         
     def _two_point_crossover(self, parentA: Individual_bins, parentB: Individual_bins) -> tuple[Individual_bins, Individual_bins]:
         point1 = np.random.randint(1, self.individual_bin_count - 2)
@@ -166,6 +149,7 @@ class AlgBins(Alg):
         childB_genome = parentB.genome[:point1] + parentA.genome[point1:point2] + parentB.genome[point2:]
         
         return Individual_bins(childA_genome, self.individual_max_bin_lenght), Individual_bins(childB_genome, self.individual_max_bin_lenght)
+    
     
     def _rrc_crossover(self, parentA: Individual_bins, parentB: Individual_bins) -> tuple[Individual_bins, Individual_bins]:
         # Random Respectful Crossover (RRC): For each gene, randomly decide whether to take it from parentA or parentB, but always keep the gene if it's present in both parents. Operates on the binary genome representation.
@@ -223,6 +207,7 @@ class AlgBins(Alg):
         
         individual.update_individual(genome=new_genome)
 
+
     def _toggle_mutation(self, individual: Individual_bins, min_length: int, max_length: int):
         # Toggles a bin to have length 0 (effectively removing it) or from length 0 to a random length (effectively adding it back in)..
         random_bin_index = np.random.randint(0, len(individual.genome))
@@ -237,6 +222,7 @@ class AlgBins(Alg):
         new_genome[random_bin_index] = (new_genome[random_bin_index][0], new_length) # keep the same index, just toggle the length
         
         individual.update_individual(genome=new_genome)
+
 
     def calc_fitness_single(self, individual: Individual):
         frames = np.flatnonzero(individual.genome_bin)

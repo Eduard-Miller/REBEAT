@@ -36,30 +36,60 @@ class Alg(ABC):
     def initialize_population(self):
         pass
     
+    
     @abstractmethod
     def similarity(self, individualA: Individual, individualB: Individual) -> float:
         pass
     
-    @abstractmethod
+    
     def selection(self, population: list[Individual]) -> Individual:
-        pass
+        if self.selection_method == "tournament":
+            return self._tournament_selection(population)
+        elif self.selection_method == "roulette":
+            return self._roulette_selection(population)
+        else:
+            raise ValueError(f"Unknown selection method: {self.selection_method}")
+    
+    
+    def _tournament_selection(self, population: list[Individual], k: int = 5) -> Individual:
+        if len(population) < k:
+            raise ValueError(f"Tournament size k={k} cannot be larger than the population size {len(population)}")
+        tournament = np.random.choice(population, size=k, replace=False)
+        tournament.sort(key=lambda ind: ind.fitness, reverse=True) # sort by fitness
+        return tournament[0] # return the fittest individual in the tournament
+    
+    
+    def _roulette_selection(self, population: list[Individual]) -> Individual:
+        fitnesses = np.array([ind.fitness for ind in population])
+        total_fitness = np.sum(fitnesses)
+        if total_fitness == 0:
+            probabilities = np.ones(len(population)) / len(population) # Avoid division by zero, assign equal probabilities
+        else:
+            probabilities = fitnesses / total_fitness
+        selected_index = np.random.choice(len(population), p=probabilities)
+        return population[selected_index]
+    
     
     @abstractmethod
     def crossover(self, parentA: Individual, parentB: Individual) -> tuple[Individual, Individual]:
         pass
     
+    
     @abstractmethod
     def mutation(self, individual: Individual):
         pass
+    
     
     @abstractmethod
     def calc_fitness_single(self, individual: Individual):
         pass
     
+    
     def calc_fitness_population(self):
         # Calculate fitness for all individuals in the population
         for individual in self.population:
             self.calc_fitness_single(individual)
+        
         
     def clearing(self, population: list[Individual]):
         # sort the pop by fitness
