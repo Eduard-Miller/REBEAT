@@ -1,6 +1,6 @@
 import numpy as np
 
-from core.individual import Individual
+from individual import Individual
 
 class Individual_bins(Individual):
     max_bin_lenght: int
@@ -9,7 +9,7 @@ class Individual_bins(Individual):
     def __init__(self, genome: list[tuple[int, int]], max_bin_lenght: int):
         self.max_bin_lenght = max_bin_lenght
         self.genome = genome
-        self.update_genome_bin()
+        self._update_genome_bin()
         self.fitness = None
         self.fenotype = None
         

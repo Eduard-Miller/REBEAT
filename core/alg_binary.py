@@ -1,5 +1,6 @@
 import numpy as np
 
+from core import individual
 import core.musicProcessing as mp
 from core.alg import Alg
 from core.individual import Individual
@@ -166,22 +167,66 @@ class AlgBinary(Alg):
 
     def mutation(self, individual: Individual):
         # mutation probability is shared across all mutation types, multiple mutations can occur in one pass
-        prob = self.mutation_probability/3 # divide by number of mutation types 
+        prob = self.mutation_probability/2 # divide by number of mutation types 
         
-        pass
+        if np.random.rand() < prob:
+            self._burst_mutation(individual)
+        if np.random.rand() < prob:
+            self._shift_mutation(individual)
         
         
-    def burst_mutation(self, individual: Individual_binary):
-        pass
+    def _island_locator(self, genome: np.ndarray) -> list[tuple[int, int]]:
+        arr = np.asarray(genome, dtype=np.int8)
+
+        changes = np.flatnonzero(np.diff(arr) != 0) + 1
+        boundaries = np.r_[0, changes, arr.size]
+        
+        bins = [(int(first_index), int(last_index), int(value)) for first_index, last_index, value in zip(boundaries[:-1], boundaries[1:]-1, arr[boundaries[:-1]])]
+        return bins
+        
+    def _burst_mutation(self, individual: Individual_binary):        
+        bins = self._island_locator(individual.genome)
+        
+        bin_index = np.random.randint(0, len(bins))
+        max_change = min(self.binary_length//20, (bins[bin_index][1] - bins[bin_index][0])//2)
+        
+        change_magnitude = np.random.randint(0, max_change + 1)
+        
+        new_genome = individual.genome.copy()
+        # toggle 1s to 0s or 0s to 1s in a burst
+        if np.random.rand() < 0.5: # decide left or right
+            if bins[bin_index][2] == 1:
+                new_genome[bins[bin_index][0]:bins[bin_index][0]+change_magnitude] = False
+            else:
+                new_genome[bins[bin_index][0]:bins[bin_index][0]+change_magnitude] = True
+        else:
+            if bins[bin_index][2] == 1:
+                new_genome[bins[bin_index][1]-change_magnitude:bins[bin_index][1]] = False
+            else:
+                new_genome[bins[bin_index][1]-change_magnitude:bins[bin_index][1]] = True
+        
+        individual.update_individual(genome=new_genome)     
     
-    def shift_mutation(self, individual: Individual_binary):
-        pass
-    
-    def edge_mutation(self, individual: Individual_binary):
-        pass
+    def _shift_mutation(self, individual: Individual_binary):
+        bins = self._island_locator(individual.genome)
+        bins = [bin for bin in bins if bin[2] == 1] # only consider shifting islands of 1s
+        if not bins:
+            return # no islands to shift
+        
+        chosen = np.random.choice(len(bins))
+        
+        shift_amount = np.random.randint(1, self.binary_length//100 + 1)
+        if np.random.rand() < 0.5: # decide left or right
+            shift_amount = -shift_amount
+            
+        new_genome = individual.genome.copy()
+        new_genome[bins[chosen][0]:bins[chosen][1]] = False # remove the original island
+        new_genome[np.clip(bins[chosen][0] + shift_amount, 0, self.binary_length-1):np.clip(bins[chosen][1] + shift_amount, 0, self.binary_length)] = True # add the shifted island, clip to stay within bounds
+        
+        individual.update_individual(genome=new_genome)
 
     def calc_fitness_single(self, individual: Individual):
-        frames = np.flatnonzero(individual.genome_bin)
+        frames = np.flatnonzero(individual.genome)
         n_frames = len(frames)
         
         if n_frames < 2:
@@ -195,7 +240,7 @@ class AlgBinary(Alg):
         cohesion = sum_similarities / num_pairs
 
         # Length reward factor
-        length_reward = np.log1p(n_frames) / np.log1p(self.mp.sim_matrix.shape[0])
+        length_reward = np.log1p(n_frames) / np.log1p(self.binary_length)
         
         fitness = cohesion * length_reward
         

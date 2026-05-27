@@ -1,9 +1,7 @@
 import numpy as np
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Any
 
-@dataclass
 class Individual(ABC):
     genome: Any # can be any representation of the genome, will be defined in the specific individual classes
     fitness: float

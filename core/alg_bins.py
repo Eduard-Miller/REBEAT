@@ -256,7 +256,7 @@ class AlgBins(Alg):
         cohesion = sum_similarities / num_pairs
 
         # Length reward factor
-        length_reward = np.log1p(n_frames) / np.log1p(self.mp.sim_matrix.shape[0])
+        length_reward = np.log1p(n_frames) / np.log1p(self.individual_max_bin_lenght)
         
         fitness = cohesion * length_reward
         
