@@ -34,7 +34,7 @@ class AlgBins(Alg):
         self.individual_bin_count = individual_bin_count
         self.individual_max_bin_lenght = mp.sim_matrix.shape[0]
         
-        self.diversity = np.array([], dtype=np.float16)
+        self.avg_similarity = np.array([], dtype=np.float16)
         self.removed_by_clearing = np.array([], dtype=np.int16)
         self.best_fitness = np.array([], dtype=np.float16)
         self.avg_fitness = np.array([], dtype=np.float16)
@@ -57,7 +57,10 @@ class AlgBins(Alg):
         max_len = max(min_len + 1, int(np.ceil((max_total_coverage * self.individual_max_bin_lenght) / self.individual_bin_count)))
         
         for _ in range(population_size):
-            new_genome = [(np.random.randint(0, self.individual_max_bin_lenght), np.random.randint(min_len, max_len + 1)) for _ in range(self.individual_bin_count)]
+            new_genome = [
+                (int(np.random.randint(0, self.individual_max_bin_lenght)), int(np.random.randint(min_len, max_len + 1)))
+                for _ in range(self.individual_bin_count)
+            ]
             new_genome.sort(key=lambda x: x[0]) # sort genome by index
             self.population.append(Individual_bins(new_genome, self.individual_max_bin_lenght))
           
@@ -77,7 +80,8 @@ class AlgBins(Alg):
             genome_bin[frame] = True
             genome_bin[top_k_indices] = True
 
-            genome = binary_to_bins(genome_bin, self.individual_max_bin_lenght)
+            genome = binary_to_bins(genome_bin, self.individual_bin_count)
+            genome = [(int(i), int(length)) for i, length in genome]
             genome.sort(key=lambda x: x[0]) # sort genome by index
 
             return Individual_bins(genome, self.individual_max_bin_lenght)
@@ -200,10 +204,10 @@ class AlgBins(Alg):
         shift_amount = np.floor(shift_amount).astype(int)
         
         #ensure i doesn't go out of bounds
-        new_i = np.clip(individual.genome[random_bin_index][0] + shift_amount, 0, self.individual_max_bin_lenght)
+        new_i = int(np.clip(individual.genome[random_bin_index][0] + shift_amount, 0, self.individual_max_bin_lenght))
         
         new_genome = individual.genome.copy()
-        new_genome[random_bin_index] = (new_i, new_genome[random_bin_index][1]) # keep the same length, just shift the index
+        new_genome[random_bin_index] = (new_i, int(new_genome[random_bin_index][1])) # keep the same length, just shift the index
         
         new_genome.sort(key=lambda x: x[0]) # sort genome by index
     
@@ -213,14 +217,14 @@ class AlgBins(Alg):
     def _length_mutation(self, individual: Individual_bins):
         random_bin_index = np.random.randint(0, len(individual.genome))
         length_change = np.random.normal(loc=0, scale=5) # Change length by a normal distribution with mean 0 and standard deviation of 5 frames
-        length_change = np.floor(length_change).astype(int)
+        length_change = int(np.floor(length_change).astype(int))
         
-        new_length = individual.genome[random_bin_index][1] + length_change
+        new_length = int(individual.genome[random_bin_index][1] + length_change)
         
         # no need to ensure bounds or that the new length is positive, because the update_genome method will handle that by clipping the binary
         
         new_genome = individual.genome.copy()
-        new_genome[random_bin_index] = (new_genome[random_bin_index][0], new_length) # keep the same index, just change the length
+        new_genome[random_bin_index] = (int(new_genome[random_bin_index][0]), new_length) # keep the same index, just change the length
         
         individual.update_individual(genome=new_genome)
 
@@ -231,12 +235,12 @@ class AlgBins(Alg):
         current_length = individual.genome[random_bin_index][1]
         
         if current_length == 0:
-            new_length = np.random.randint(min_length, max_length + 1)
+            new_length = int(np.random.randint(min_length, max_length + 1))
         else:
             new_length = 0
         
         new_genome = individual.genome.copy()
-        new_genome[random_bin_index] = (new_genome[random_bin_index][0], new_length) # keep the same index, just toggle the length
+        new_genome[random_bin_index] = (int(new_genome[random_bin_index][0]), int(new_length)) # keep the same index, just toggle the length
         
         individual.update_individual(genome=new_genome)
 
@@ -256,7 +260,7 @@ class AlgBins(Alg):
         cohesion = sum_similarities / num_pairs
 
         # Length reward factor
-        length_reward = np.log1p(n_frames) / np.log1p(self.individual_max_bin_lenght)
+        length_reward = np.log1p(n_frames)
         
         fitness = cohesion * length_reward
         

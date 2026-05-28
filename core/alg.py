@@ -26,7 +26,7 @@ class Alg(ABC):
     similarity_memo: np.ndarray # memoization for similarity calculations, to avoid redundant calculations during clearing
     
     # metrics to track
-    diversity: np.ndarray
+    avg_similarity: np.ndarray
     removed_by_clearing: np.ndarray
     best_fitness: np.ndarray
     avg_fitness: np.ndarray
@@ -136,9 +136,9 @@ class Alg(ABC):
         # average similarity in similarity memo as a diversity metric, excluding NaN values and self-similarity
         sim_values = self.similarity_memo[~np.isnan(self.similarity_memo)]
         sim_values = sim_values[sim_values < 1.0] # exclude self-similarity
-        avg_similarity = np.mean(sim_values) if len(sim_values) > 0 else 0.0
+        new_avg_similarity = np.mean(sim_values) if len(sim_values) > 0 else 0.0
         
-        self.diversity = np.append(self.diversity, avg_similarity)
+        self.avg_similarity = np.append(self.avg_similarity, new_avg_similarity)
         
         return population
         
