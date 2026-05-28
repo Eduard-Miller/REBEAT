@@ -143,7 +143,7 @@ class Alg(ABC):
         return population
         
     
-    def run(self) -> list[Individual]:
+    def run(self):
         '''
         Run the genetic algorithm with set parameters and return the best individuals from every niche 
         '''
@@ -182,7 +182,14 @@ class Alg(ABC):
             self.avg_fitness = np.append(self.avg_fitness, np.mean(fitness_values))
             self.worst_fitness = np.append(self.worst_fitness, np.min(fitness_values))
             
+
+    def results(self) -> list[Individual]:            
         # clear the final population to get the best individuals from each niche
+        original_niche_capacity = self.niche_capacity
         self.niche_capacity = 1 # set niche capacity to 1 to only keep the best individual from each niche
-        final_population = self.clearing(self.population)
+        final_population = self.population.copy()
+        final_population = self.clearing(final_population)
+        
+        self.niche_capacity = original_niche_capacity # restore original niche capacity for future runs if needed
+        
         return final_population
