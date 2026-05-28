@@ -42,13 +42,13 @@ class MusicProcessingProvider:
     def median_filter(self, frames: np.ndarray) -> np.ndarray:
         # Apply width wise median filtering (per frequency bin) to the specified frames and 0 out the rest
         filtered_data = np.zeros_like(self.magnitude)
-        median = np.median(self.magnitude[frames], axis=0)
+        median = np.median(self.magnitude[:, frames], axis=1)
         for frame in frames:
-            filtered_data[frame] = median
+            filtered_data[:, frame] = median
         return filtered_data
 
     def calc_median_frame(self, frames: np.ndarray) -> np.ndarray:
-        return np.median(self.magnitude[frames], axis=0)
+        return np.median(self.magnitude[:, frames], axis=1)
 
     def calc_mask(self, W: np.ndarray) -> np.ndarray:
         V = self.magnitude
