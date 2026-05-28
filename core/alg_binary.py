@@ -164,10 +164,12 @@ class AlgBinary(Alg):
         
         # XOR to find differing bits
         diff = np.bitwise_xor(parentA.genome, parentB.genome)
-        
-        childA_genome = np.where(diff, np.random.choice([parentA.genome, parentB.genome]), parentA.genome)
 
-        childB_genome = np.where(diff, np.random.choice([parentA.genome, parentB.genome]), parentB.genome)
+        choose_parent_b = np.random.rand(*diff.shape) < 0.5
+        childA_genome = np.where(diff, np.where(choose_parent_b, parentB.genome, parentA.genome), parentA.genome)
+
+        choose_parent_b = np.random.rand(*diff.shape) < 0.5
+        childB_genome = np.where(diff, np.where(choose_parent_b, parentB.genome, parentA.genome), parentB.genome)
                 
         return Individual_binary(childA_genome), Individual_binary(childB_genome)
 

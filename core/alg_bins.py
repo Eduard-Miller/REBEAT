@@ -173,12 +173,16 @@ class AlgBins(Alg):
         # XOR to find differing bits
         diff = np.bitwise_xor(parentA.genome_bin, parentB.genome_bin)
         
-        childA_bin = np.where(diff, np.random.choice([parentA.genome_bin, parentB.genome_bin]), parentA.genome_bin)
+        choose_parent_b = np.random.rand(*diff.shape) < 0.5
+        childA_bin = np.where(diff, np.where(choose_parent_b, parentB.genome_bin, parentA.genome_bin), parentA.genome_bin)
 
-        childB_bin = np.where(diff, np.random.choice([parentA.genome_bin, parentB.genome_bin]), parentB.genome_bin)
+        choose_parent_b = np.random.rand(*diff.shape) < 0.5
+        childB_bin = np.where(diff, np.where(choose_parent_b, parentB.genome_bin, parentA.genome_bin), parentB.genome_bin)
         
         childA_genome = binary_to_bins(childA_bin, self.individual_max_bin_lenght)
         childB_genome = binary_to_bins(childB_bin, self.individual_max_bin_lenght)
+        childA_genome = [(int(i), int(length)) for i, length in childA_genome]
+        childB_genome = [(int(i), int(length)) for i, length in childB_genome]
         
         childA_genome.sort(key=lambda x: x[0]) # sort genome by index
         childB_genome.sort(key=lambda x: x[0]) # sort genome by index
