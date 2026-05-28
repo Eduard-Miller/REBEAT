@@ -13,6 +13,7 @@ dependencies = [
     "scikit-learn>=1.8.0",
     "scipy>=1.17.1",
     "setuptools>=82.0.1",
+    "snakeviz>=2.2.2",
     "sortedcontainers>=2.4.0",
     "soundfile>=0.13.1",
     "wheel>=0.47.0",
