@@ -31,7 +31,7 @@ class AlgBinary(Alg):
         
         self.binary_length = mp.sim_matrix.shape[0]
         
-        self.diversity = np.array([], dtype=np.float16)
+        self.avg_similarity = np.array([], dtype=np.float16)
         self.removed_by_clearing = np.array([], dtype=np.int16)
         self.best_fitness = np.array([], dtype=np.float16)
         self.avg_fitness = np.array([], dtype=np.float16)
@@ -70,7 +70,6 @@ class AlgBinary(Alg):
         def build_individual(frame: int) -> Individual_binary:
             top_k_indices = self.mp.get_top_k_similar_frames(frame, k - 1)
 
-            # Create a temporary binary representation to find contiguous regions
             genome = np.zeros(self.binary_length, dtype=bool)
             genome[frame] = True
             genome[top_k_indices] = True
@@ -136,8 +135,8 @@ class AlgBinary(Alg):
     def _single_point_crossover(self, parentA: Individual_binary, parentB: Individual_binary) -> tuple[Individual_binary, Individual_binary]:
         crossover_point = np.random.randint(1, self.binary_length - 1)
         
-        childA_genome = parentA.genome[:crossover_point] + parentB.genome[crossover_point:]
-        childB_genome = parentB.genome[:crossover_point] + parentA.genome[crossover_point:]
+        childA_genome = np.concatenate([parentA.genome[:crossover_point], parentB.genome[crossover_point:]])
+        childB_genome = np.concatenate([parentB.genome[:crossover_point], parentA.genome[crossover_point:]])
         
         return Individual_binary(childA_genome), Individual_binary(childB_genome)
         
@@ -146,8 +145,16 @@ class AlgBinary(Alg):
         point1 = np.random.randint(1, self.binary_length - 2)
         point2 = np.random.randint(point1 + 1, self.binary_length - 1)
         
-        childA_genome = parentA.genome[:point1] + parentB.genome[point1:point2] + parentA.genome[point2:]
-        childB_genome = parentB.genome[:point1] + parentA.genome[point1:point2] + parentB.genome[point2:]
+        childA_genome = np.concatenate([
+            parentA.genome[:point1],
+            parentB.genome[point1:point2],
+            parentA.genome[point2:]
+        ])
+        childB_genome = np.concatenate([
+            parentB.genome[:point1],
+            parentA.genome[point1:point2],
+            parentB.genome[point2:]
+        ])
         
         return Individual_binary(childA_genome), Individual_binary(childB_genome)
     
@@ -240,7 +247,7 @@ class AlgBinary(Alg):
         cohesion = sum_similarities / num_pairs
 
         # Length reward factor
-        length_reward = np.log1p(n_frames) / np.log1p(self.binary_length)
+        length_reward = np.log1p(n_frames)
         
         fitness = cohesion * length_reward
         
