@@ -1,6 +1,8 @@
 import numpy as np
 
-class Individual_binary():    
+from core.individual import Individual
+
+class Individual_binary(Individual):    
     def __init__(self, genome: np.ndarray):
         self.genome = genome
         self.fitness = None

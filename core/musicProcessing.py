@@ -9,15 +9,15 @@ class MusicProcessingProvider:
     sim_matrix = None
     
     
-    def __init__(self, path: str, duration: float, hop_length: int, win_length: int, window_type: str):
+    def __init__(self, path: str, duration: float, nfft: int, hop_length: int, win_length: int, window_type: str):
         self.path = path
-        self.stft = self.calc_STFT(duration, hop_length, win_length, window_type)
-        self.magnitude = self.calc_magnitude(self.stft)
-        self.sim_matrix = self.calc_sim_matrix(self.magnitude)
+        self.stft = self.calc_STFT(duration, nfft, hop_length, win_length, window_type)
+        self.magnitude = self.calc_magnitude()
+        self.sim_matrix = self.calc_sim_matrix()
 
-    def calc_STFT(self, duration: float, hop_length: int, win_length: int, window_type: str) -> np.ndarray:
-        y, _ = librosa.load(self.path, sr=self.sr, duration=duration)
-        stft_result = librosa.stft(y, hop_length=hop_length, win_length=win_length, window=window_type)
+    def calc_STFT(self, duration: float, nfft: int, hop_length: int, win_length: int, window_type: str) -> np.ndarray:
+        y, _ = librosa.load(self.path, sr=None, duration=duration)
+        stft_result = librosa.stft(y, n_fft=nfft, hop_length=hop_length, win_length=win_length, window=window_type)
         return stft_result
 
     def calc_magnitude(self) -> np.ndarray:

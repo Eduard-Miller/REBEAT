@@ -54,7 +54,7 @@ class Alg(ABC):
     def _tournament_selection(self, population: list[Individual], k: int = 5) -> Individual:
         if len(population) < k:
             raise ValueError(f"Tournament size k={k} cannot be larger than the population size {len(population)}")
-        tournament = np.random.choice(population, size=k, replace=False)
+        tournament = list(np.random.choice(population, size=k, replace=False))
         tournament.sort(key=lambda ind: ind.fitness, reverse=True) # sort by fitness
         return tournament[0] # return the fittest individual in the tournament
     
@@ -138,7 +138,7 @@ class Alg(ABC):
         sim_values = sim_values[sim_values < 1.0] # exclude self-similarity
         avg_similarity = np.mean(sim_values) if len(sim_values) > 0 else 0.0
         
-        self.diversity = np.append(self.diversity, 1 - avg_similarity)
+        self.diversity = np.append(self.diversity, avg_similarity)
         
         return population
         
