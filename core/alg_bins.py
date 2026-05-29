@@ -179,8 +179,8 @@ class AlgBins(Alg):
         choose_parent_b = np.random.rand(*diff.shape) < 0.5
         childB_bin = np.where(diff, np.where(choose_parent_b, parentB.genome_bin, parentA.genome_bin), parentB.genome_bin)
         
-        childA_genome = binary_to_bins(childA_bin, self.individual_max_bin_lenght)
-        childB_genome = binary_to_bins(childB_bin, self.individual_max_bin_lenght)
+        childA_genome = binary_to_bins(childA_bin, self.individual_bin_count)
+        childB_genome = binary_to_bins(childB_bin, self.individual_bin_count)
         childA_genome = [(int(i), int(length)) for i, length in childA_genome]
         childB_genome = [(int(i), int(length)) for i, length in childB_genome]
         

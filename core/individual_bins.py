@@ -47,7 +47,7 @@ class Individual_bins(Individual):
         self.genome = genome
         
         
-def binary_to_bins(genome_bin: np.ndarray, max_bin_lenght: int) -> list[tuple[int, int]]:
+def binary_to_bins(genome_bin: np.ndarray, max_bin_count: int) -> list[tuple[int, int]]:
     """
     Converts the binary representation of the genome back into a list of tuples (index and length).
     """
@@ -61,10 +61,10 @@ def binary_to_bins(genome_bin: np.ndarray, max_bin_lenght: int) -> list[tuple[in
     bins = list(zip(starts.tolist(), (ends - starts).tolist()))
     
     # should only occur during initialization
-    if len(bins) > max_bin_lenght:
+    if len(bins) > max_bin_count:
         # If the number of bins exceeds the maximum genome length, we can keep only the longest bins until we reach the limit
         bins.sort(key=lambda x: x[1], reverse=True) # Sort bins by length
-        bins = bins[:max_bin_lenght] # Keep only the longest bins up to the maximum genome length
+        bins = bins[:max_bin_count] # Keep only the longest bins up to the maximum genome length
         bins.sort(key=lambda x: x[0]) # Sort bins back
                     
     return bins
