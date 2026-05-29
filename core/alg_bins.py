@@ -92,6 +92,8 @@ class AlgBins(Alg):
     def similarity(self, individualA: Individual, individualB: Individual) -> float:
         if self.sim_metric == "jaccard":
             return self._similarity_Jaccard(individualA, individualB)
+        elif self.sim_metric == "cosine":
+            return self._similarity_cosine(individualA, individualB)
         elif self.sim_metric == "fenotype":
             return self._similarity_fenotype(individualA, individualB)
         else:
@@ -106,6 +108,15 @@ class AlgBins(Alg):
         union = np.sum(individualA.genome_bin | individualB.genome_bin)
         return intersection / union if union != 0 else 0
     
+    def _similarity_cosine(self, individualA: Individual_bins, individualB: Individual_bins) -> float:
+        '''
+        calculates the cosine similarity between two individuals
+        '''
+        dot_product = np.dot(individualA.genome_bin, individualB.genome_bin)
+        norm_A = np.linalg.norm(individualA.genome_bin)
+        norm_B = np.linalg.norm(individualB.genome_bin)
+        
+        return dot_product / (norm_A * norm_B)
     
     def _similarity_fenotype(self, individualA: Individual_bins, individualB: Individual_bins) -> float:
         '''
