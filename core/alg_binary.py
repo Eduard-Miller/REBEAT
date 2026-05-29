@@ -243,14 +243,19 @@ class AlgBinary(Alg):
             return
 
         # Cohesion (Average pairwise similarity)
-        sub_sim_matrix = self.mp.sim_matrix[np.ix_(frames, frames)]
-        sum_similarities = np.sum(sub_sim_matrix) - n_frames # Remove diagonal 1s
-        num_pairs = n_frames * (n_frames - 1)
-        cohesion = sum_similarities / num_pairs
+        # sub_sim_matrix = self.mp.sim_matrix[np.ix_(frames, frames)]
+        # sum_similarities = np.sum(sub_sim_matrix) - n_frames # Remove diagonal 1s
+        # num_pairs = n_frames * (n_frames - 1)
+        # cohesion = sum_similarities / num_pairs
 
         # Length reward factor
-        length_reward = np.log1p(n_frames)
+        # length_reward = np.log1p(n_frames)
         
-        fitness = cohesion * length_reward
+        # fitness = cohesion * length_reward
+        
+        # alternate fitness: sum up all pairwise similarity values -scaled by (2x-1)^3 [-1,1] for x {0-1} such that bad frames lower fitness instead of contributing to length reward, and good frames increase fitness more than they would with the length reward
+        
+        sub_sim_matrix = self.mp.sim_matrix[np.ix_(frames, frames)]
+        fitness = np.sum((2*sub_sim_matrix-1)**3) - n_frames # Last part removes diagonal x = 1 -> 1 * n_frames
         
         individual.update_individual(fitness=fitness)
