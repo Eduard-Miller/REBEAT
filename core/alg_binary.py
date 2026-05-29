@@ -58,7 +58,7 @@ class AlgBinary(Alg):
                 end = start + np.random.randint(island_length[0], island_length[1] + 1) # random length of island
                 genome[start:end] = True
             self.population.append(Individual_binary(genome))
-            
+                
     
     def _initialize_elite_pop(self, population_size: int, k: int):
         '''
@@ -77,18 +77,19 @@ class AlgBinary(Alg):
             return Individual_binary(genome)
 
         self.population = [build_individual(frame) for frame in frames]
-    
-    
+       
+       
     def similarity(self, individualA: Individual, individualB: Individual) -> float:
         if self.sim_metric == "jaccard":
             return self._similarity_Jaccard(individualA, individualB)
         elif self.sim_metric == "cosine":
             return self._similarity_cosine(individualA, individualB)
+        elif self.sim_metric == "cosine_blurred":
+            return self._similarity_blurred_cosine(individualA, individualB)
         elif self.sim_metric == "fenotype":
             return self._similarity_fenotype(individualA, individualB)
         else:
             raise ValueError(f"Unknown similarity metric: {self.sim_metric}")
-
 
     def _similarity_Jaccard(self, individualA: Individual_binary, individualB: Individual_binary) -> float:
         '''
@@ -107,6 +108,29 @@ class AlgBinary(Alg):
         norm_B = np.linalg.norm(individualB.genome)
         
         return dot_product / (norm_A * norm_B)
+    
+    def _similarity_blurred_cosine(self, individualA: Individual_binary, individualB: Individual_binary, window_size: int = 21) -> float:
+            '''
+            Calculates the blurred cosine similarity between two individuals.
+            The blurring allows close/shifted islands of 1s to register as similar.
+            '''
+            # 1. Create a 1D smoothing kernel (a vector of 1s)
+            kernel = np.ones(window_size)
+            
+            # 2. Convolve both genomes to smear the 1s (mode='same' preserves the 10k length)
+            genome_A_smoothed = np.convolve(individualA.genome, kernel, mode='same')
+            genome_B_smoothed = np.convolve(individualB.genome, kernel, mode='same')
+            
+            # 3. Compute cosine similarity on the blurred representations
+            dot_product = np.dot(genome_A_smoothed, genome_B_smoothed)
+            norm_A = np.linalg.norm(genome_A_smoothed)
+            norm_B = np.linalg.norm(genome_B_smoothed)
+            
+            # Handle edge case where an individual's genome contains no 1s
+            if norm_A == 0 or norm_B == 0:
+                return 0.0
+                
+            return dot_product / (norm_A * norm_B)
     
     def _similarity_fenotype(self, individualA: Individual_binary, individualB: Individual_binary) -> float:
         '''
