@@ -33,8 +33,8 @@ mutation_probability = 0.05
 crossover_probability = 0.5
 niche_capacity = 5
 population_initialization_method = "elite" # "random" or "elite"
-selection_method = "tournament"
-crossover_method = "two_point"
+selection_method = "roulette" # "tournament" or "roulette"
+crossover_method = "rrc"
 sim_metric = "jaccard" # "jaccard" or "fenotype"
 Individual_bin_count = 10
 
@@ -48,10 +48,10 @@ print(f"Execution time: {end_time - start_time:.2f} seconds")
 # plot stored metrics
 plt.figure(figsize=(14, 8))
 plt.subplot(2, 2, 1)
-plt.plot(alg.avg_similarity, label="Diversity")
+plt.plot(alg.avg_similarity, label="Similarity")
 plt.xlabel("Generation")
-plt.ylabel("Diversity")
-plt.title("Population Diversity Over Generations")
+plt.ylabel("Similarity")
+plt.title("Population Similarity Over Generations")
 plt.legend()
 plt.subplot(2, 2, 2)
 plt.plot(alg.removed_by_clearing, label="Removed by Clearing")

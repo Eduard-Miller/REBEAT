@@ -24,18 +24,18 @@ music_processor = mp(path, duration, nfft, hop_length, win_length, window_type)
 print("Music processing done in {:.2f} seconds".format(time() - start_time))
 
 # alg params
-num_generations = 100
+num_generations = 500
 population_size = 200
 random_seed = 42
 clearing_interval = 20
-clearing_radius = 0.8
+clearing_radius = 0.95
 mutation_probability = 0.05
-crossover_probability = 0.5
+crossover_probability = 0.8
 niche_capacity = 5
 population_initialization_method = "elite" # "random" or "elite"
-selection_method = "tournament"
-crossover_method = "two_point"
-sim_metric = "jaccard" # "jaccard" or "fenotype"
+selection_method = "roulette" # "tournament" or "roulette"
+crossover_method = "two_point" # "single_point" , "two_point" or "rrc"
+sim_metric = "fenotype" # "jaccard" or "fenotype"
 Individual_bin_count = 10
 
 alg = AlgBins(mp=music_processor, random_seed=random_seed, num_generations=num_generations, population_size=population_size, individual_bin_count=Individual_bin_count, mutation_probability=mutation_probability, crossover_probability=crossover_probability, crossover_method=crossover_method, selection_method=selection_method, sim_metric=sim_metric, clearing_radius=clearing_radius, clearing_interval=clearing_interval, niche_capacity=niche_capacity, population_initialization_method=population_initialization_method)
@@ -48,10 +48,10 @@ print(f"Execution time: {end_time - start_time:.2f} seconds")
 # plot stored metrics
 plt.figure(figsize=(14, 8))
 plt.subplot(2, 2, 1)
-plt.plot(alg.avg_similarity, label="Diversity")
+plt.plot(alg.avg_similarity, label="Similarity")
 plt.xlabel("Generation")
-plt.ylabel("Diversity")
-plt.title("Population Diversity Over Generations")
+plt.ylabel("Similarity")
+plt.title("Population Similarity Over Generations")
 plt.legend()
 plt.subplot(2, 2, 2)
 plt.plot(alg.removed_by_clearing, label="Removed by Clearing")
@@ -72,4 +72,4 @@ plt.show()
 
 results = alg.results()
 for i, ind in enumerate(results):
-    print(f"Best individual from niche {i+1}: Fitness = {ind.fitness:.4f}, Genome = {ind.genome}")
+    print(f"Best individual from niche {i+1}: Fitness = {ind.fitness:.4f}, Nr of bins = {len(ind.genome)} Genome = {ind.genome}")

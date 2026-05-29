@@ -52,6 +52,7 @@ class Alg(ABC):
     
     
     def _tournament_selection(self, population: list[Individual], k: int = 5) -> Individual:
+        k = min(k, self.niche_capacity)
         if len(population) < k:
             raise ValueError(f"Tournament size k={k} cannot be larger than the population size {len(population)}")
         tournament = list(np.random.choice(population, size=k, replace=False))
@@ -120,8 +121,8 @@ class Alg(ABC):
 
                     if similarity >= self.clearing_radius:
                         if niche_count < self.niche_capacity:
-                            if i != j:
-                                population[j].update_individual(fitness=0.0) # Clear the fitness of similar individuals, but not the niche winner
+                            # if i != j:
+                            #     population[j].update_individual(fitness=0.0) # Clear the fitness of similar individuals, but not the niche winner
                             cleared[j] = True
                             niche_count += 1
                         else:
