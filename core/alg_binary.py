@@ -30,6 +30,8 @@ class AlgBinary(Alg):
         self.population = []
         
         self.binary_length = mp.sim_matrix.shape[0]
+        self.similarity_memo = np.full((population_size, population_size), np.nan, dtype=np.float16) # initialize similarity memoization matrix with NaN values
+
         
         self.avg_similarity = np.array([], dtype=np.float16)
         self.removed_by_clearing = np.array([], dtype=np.int16)

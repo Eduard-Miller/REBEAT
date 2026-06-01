@@ -41,6 +41,20 @@ class Alg(ABC):
     def similarity(self, individualA: Individual, individualB: Individual) -> float:
         pass
     
+    def calc_similarity_pop(self, population: list[Individual]):
+        # Calculate similarity for all pairs of individuals in the population
+        for i in range(len(population)):
+            for j in range(i + 1, len(population)):
+                if i == j:
+                    self.similarity_memo[i, j] = 1.0
+                else:
+                    similarity = self.similarity(population[i], population[j])
+                    self.similarity_memo[i, j] = similarity
+                    self.similarity_memo[j, i] = similarity
+                    
+    def reset_similarity_memo(self):
+        self.similarity_memo = np.full((self.population_size, self.population_size), np.nan, dtype=np.float16)
+    
     
     def selection(self, population: list[Individual]) -> Individual:
         if self.selection_method == "tournament":
@@ -51,7 +65,7 @@ class Alg(ABC):
             raise ValueError(f"Unknown selection method: {self.selection_method}")
     
     
-    def _tournament_selection(self, population: list[Individual], k: int = 5) -> Individual:
+    def _tournament_selection(self, population: list[Individual], k: int = 3) -> Individual:
         k = min(k, self.niche_capacity)
         if len(population) < k:
             raise ValueError(f"Tournament size k={k} cannot be larger than the population size {len(population)}")
@@ -62,6 +76,9 @@ class Alg(ABC):
     
     def _roulette_selection(self, population: list[Individual]) -> Individual:
         fitnesses = np.array([ind.fitness for ind in population])
+        min_fitness = np.min(fitnesses)
+        if min_fitness < 0:
+            fitnesses = fitnesses - min_fitness
         total_fitness = np.sum(fitnesses)
         if total_fitness == 0:
             probabilities = np.ones(len(population)) / len(population) # Avoid division by zero, assign equal probabilities
@@ -96,7 +113,7 @@ class Alg(ABC):
         # sort the pop by fitness
         population.sort(key=lambda ind: ind.fitness, reverse=True)
         # reset memo since population order changed
-        self.similarity_memo = np.full((len(population), len(population)), np.nan, dtype=np.float16)
+        # self.reset_similarity_memo()
         # keep track of which individuals have been cleared
         cleared = np.zeros(len(population), dtype=bool)
         remove_indices: set[int] = set()
@@ -121,8 +138,8 @@ class Alg(ABC):
 
                     if similarity >= self.clearing_radius:
                         if niche_count < self.niche_capacity:
-                            # if i != j:
-                            #     population[j].update_individual(fitness=0.0) # Clear the fitness of similar individuals, but not the niche winner
+                            if i != j:
+                                population[j].update_individual(fitness=0.0) # Clear the fitness of similar individuals, but not the niche winner
                             cleared[j] = True
                             niche_count += 1
                         else:
@@ -134,12 +151,12 @@ class Alg(ABC):
         # log stuff
         self.removed_by_clearing = np.append(self.removed_by_clearing, len(remove_indices)) # individuals removed by clearing
         
-        # average similarity in similarity memo as a diversity metric, excluding NaN values and self-similarity
-        sim_values = self.similarity_memo[~np.isnan(self.similarity_memo)]
-        sim_values = sim_values[sim_values < 1.0] # exclude self-similarity
-        new_avg_similarity = np.mean(sim_values) if len(sim_values) > 0 else 0.0
+        # # average similarity in similarity memo as a diversity metric, excluding NaN values and self-similarity
+        # sim_values = self.similarity_memo[~np.isnan(self.similarity_memo)]
+        # sim_values = sim_values[sim_values < 1.0] # exclude self-similarity
+        # new_avg_similarity = np.mean(sim_values) if len(sim_values) > 0 else 0.0
         
-        self.avg_similarity = np.append(self.avg_similarity, new_avg_similarity)
+        # self.avg_similarity = np.append(self.avg_similarity, new_avg_similarity)
         
         return population
         
@@ -164,13 +181,13 @@ class Alg(ABC):
                 self.mutation(childA)
                 self.mutation(childB)
                 
-                self.calc_fitness_single(childA)
-                self.calc_fitness_single(childB)
-                
                 new_population.extend([childA, childB])
                 
             # ensure new population does not exceed population size (can only happen if population size is odd, since we add 2 children at a time)
             new_population = new_population[:self.population_size]
+            
+            self.calc_fitness_population() # calculate fitness for the new population before clearing, to have the fitness values ready for clearing
+            self.calc_similarity_pop(new_population) # calculate similarity for the new population before clearing, to have the memo ready for clearing
             
             if generation % self.clearing_interval == 0:
                 new_population = self.clearing(new_population)
@@ -182,6 +199,14 @@ class Alg(ABC):
             self.best_fitness = np.append(self.best_fitness, np.max(fitness_values))
             self.avg_fitness = np.append(self.avg_fitness, np.mean(fitness_values))
             self.worst_fitness = np.append(self.worst_fitness, np.min(fitness_values))
+            
+            # average similarity in similarity memo as a diversity metric, excluding NaN values and self-similarity
+            sim_values = self.similarity_memo[~np.isnan(self.similarity_memo)]
+            sim_values = sim_values[sim_values < 1.0] # exclude self-similarity
+            new_avg_similarity = np.mean(sim_values) if len(sim_values) > 0 else 0.0
+            
+            self.avg_similarity = np.append(self.avg_similarity, new_avg_similarity)
+            self.reset_similarity_memo()
             
 
     def results(self) -> list[Individual]:            
