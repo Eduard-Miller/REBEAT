@@ -215,6 +215,7 @@ class Alg(ABC):
         self.niche_capacity = 1 # set niche capacity to 1 to only keep the best individual from each niche
         final_population = self.population.copy()
         final_population = self.clearing(final_population)
+        self.calc_fitness_population(final_population) # recalculate fitness for the final population after clearing, to have the correct fitness values for the best individuals
         
         self.niche_capacity = original_niche_capacity # restore original niche capacity for future runs if needed
         
