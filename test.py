@@ -1,3 +1,6 @@
+import librosa
+import librosa.display
+
 from core.musicProcessing import MusicProcessingProvider as mp
 from core.alg import Alg
 from core.alg_bins import AlgBins
@@ -24,18 +27,18 @@ music_processor = mp(path, duration, nfft, hop_length, win_length, window_type)
 print("Music processing done in {:.2f} seconds".format(time() - start_time))
 
 # alg params
-num_generations = 500
+num_generations = 100
 population_size = 200
 random_seed = 42
 clearing_interval = 20
-clearing_radius = 0.95
+clearing_radius = 0.5
 mutation_probability = 0.05
 crossover_probability = 0.8
 niche_capacity = 5
-population_initialization_method = "elite" # "random" or "elite"
-selection_method = "roulette" # "tournament" or "roulette"
+population_initialization_method = "random" # "random" or "elite"
+selection_method = "tournament" # "tournament" or "roulette"
 crossover_method = "two_point" # "single_point" , "two_point" or "rrc"
-sim_metric = "fenotype" # "jaccard" or "fenotype"
+sim_metric = "jaccard" # "jaccard", "cosine", "cosine_blurred" or "fenotype"
 Individual_bin_count = 10
 
 alg = AlgBins(mp=music_processor, random_seed=random_seed, num_generations=num_generations, population_size=population_size, individual_bin_count=Individual_bin_count, mutation_probability=mutation_probability, crossover_probability=crossover_probability, crossover_method=crossover_method, selection_method=selection_method, sim_metric=sim_metric, clearing_radius=clearing_radius, clearing_interval=clearing_interval, niche_capacity=niche_capacity, population_initialization_method=population_initialization_method)
@@ -73,3 +76,25 @@ plt.show()
 results = alg.results()
 for i, ind in enumerate(results):
     print(f"Best individual from niche {i+1}: Fitness = {ind.fitness:.4f}, Nr of bins = {len(ind.genome)} Genome = {ind.genome}")
+    
+# plot resulting frames from individuals on magnitude spectrogram
+fig, ax = plt.subplots(figsize=(14, 6))
+S_db = librosa.amplitude_to_db(music_processor.magnitude, ref=np.max)
+img = librosa.display.specshow(S_db, x_axis="frames", y_axis="linear", cmap="magma", ax=ax)
+fig.colorbar(img, ax=ax, format="%+2.0f dB")
+ax.set_title("Magnitude Spectrogram with Individual Bins")
+
+colors = plt.cm.tab10(np.linspace(0, 1, max(1, len(results))))
+for i, ind in enumerate(results):
+    color = colors[i % len(colors)]
+    for start, length in ind.genome:
+        if length < 0:
+            ax.axvspan(start + length, start, color=color, alpha=0.5, linewidth=0.8, edgecolor=color)
+        else:
+            ax.axvspan(start, start + length, color=color, alpha=0.5, linewidth=0.8, edgecolor=color)
+    ax.plot([], [], color=color, label=f"Niche {i+1}")
+
+ax.legend(loc="upper right", frameon=True)
+plt.tight_layout()
+plt.show()
+    
