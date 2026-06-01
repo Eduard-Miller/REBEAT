@@ -48,11 +48,11 @@ class AlgBinary(Alg):
         
     def _initialize_random_pop(self, population_size: int):
         # create random islands of 1s in the binary genome, with random lengths and positions
-        num_islands = [2, 10] # number of islands per genome
+        islandspreset = [2, 20] # number of islands per genome
         island_length = [(self.binary_length - 1)*0.01, (self.binary_length - 1)*0.1] # length of each island
         for _ in range(population_size):
             genome = np.zeros(self.binary_length, dtype=bool)
-            num_islands = np.random.randint(num_islands[0], num_islands[1] + 1)
+            num_islands = np.random.randint(islandspreset[0], islandspreset[1] + 1)
             for _ in range(num_islands):
                 start = np.random.randint(0, self.binary_length - island_length[1])
                 end = start + np.random.randint(island_length[0], island_length[1] + 1) # random length of island
