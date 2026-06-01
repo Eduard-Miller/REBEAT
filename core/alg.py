@@ -103,9 +103,9 @@ class Alg(ABC):
         pass
     
     
-    def calc_fitness_population(self):
+    def calc_fitness_population(self, population: list[Individual]):
         # Calculate fitness for all individuals in the population
-        for individual in self.population:
+        for individual in population:
             self.calc_fitness_single(individual)
         
         
@@ -167,7 +167,7 @@ class Alg(ABC):
         '''
         
         self.initialize_population()
-        self.calc_fitness_population()
+        self.calc_fitness_population(self.population)
         
         for generation in range(self.num_generations):
             new_population = []
@@ -186,7 +186,7 @@ class Alg(ABC):
             # ensure new population does not exceed population size (can only happen if population size is odd, since we add 2 children at a time)
             new_population = new_population[:self.population_size]
             
-            self.calc_fitness_population() # calculate fitness for the new population before clearing, to have the fitness values ready for clearing
+            self.calc_fitness_population(new_population) # calculate fitness for the new population before clearing, to have the fitness values ready for clearing
             self.calc_similarity_pop(new_population) # calculate similarity for the new population before clearing, to have the memo ready for clearing
             
             if generation % self.clearing_interval == 0:
