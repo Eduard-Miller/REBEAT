@@ -1,3 +1,6 @@
+import librosa
+import librosa.display
+
 from core.musicProcessing import MusicProcessingProvider as mp
 from core.alg import Alg
 from core.alg_bins import AlgBins
@@ -28,15 +31,14 @@ num_generations = 100
 population_size = 200
 random_seed = 42
 clearing_interval = 20
-clearing_radius = 0.8
+clearing_radius = 0.5
 mutation_probability = 0.05
-crossover_probability = 0.5
+crossover_probability = 0.8
 niche_capacity = 5
 population_initialization_method = "elite" # "random" or "elite"
 selection_method = "tournament" # "tournament" or "roulette"
-crossover_method = "rrc"
-sim_metric = "jaccard" # "jaccard" or "fenotype"
-Individual_bin_count = 10
+crossover_method = "rrc" # "single_point" , "two_point" or "rrc"
+sim_metric = "jaccard" # "jaccard", "cosine", "cosine_blurred" or "fenotype"
 
 alg = AlgBinary(mp=music_processor, random_seed=random_seed, num_generations=num_generations, population_size=population_size, mutation_probability=mutation_probability, crossover_probability=crossover_probability, crossover_method=crossover_method, selection_method=selection_method, sim_metric=sim_metric, clearing_radius=clearing_radius, clearing_interval=clearing_interval, niche_capacity=niche_capacity, population_initialization_method=population_initialization_method)
 best_individuals = alg.run()
@@ -74,3 +76,22 @@ results = alg.results()
 for i, ind in enumerate(results):
     # print(f"Best individual from niche {i+1}: Fitness = {ind.fitness:.4f}, Genome = {ind.genome}")
     print(f"Best individual from niche {i+1}: Fitness = {ind.fitness:.4f}")
+
+# plot resulting frames from individuals on magnitude spectrogram
+fig, ax = plt.subplots(figsize=(14, 6))
+S_db = librosa.amplitude_to_db(music_processor.magnitude, ref=np.max)
+img = librosa.display.specshow(S_db, x_axis="frames", y_axis="linear", cmap="magma", ax=ax)
+fig.colorbar(img, ax=ax, format="%+2.0f dB")
+ax.set_title("Magnitude Spectrogram with Individual Frames")
+
+colors = plt.cm.tab10(np.linspace(0, 1, max(1, len(results))))
+for i, ind in enumerate(results):
+    color = colors[i % len(colors)]
+    frame_indices = np.flatnonzero(ind.genome)
+    for frame in frame_indices:
+        ax.axvspan(frame, frame + 1, color=color, alpha=0.5, linewidth=0.8, edgecolor=color)
+    ax.plot([], [], color=color, label=f"Niche {i+1}")
+
+ax.legend(loc="upper right", frameon=True)
+plt.tight_layout()
+plt.show()
