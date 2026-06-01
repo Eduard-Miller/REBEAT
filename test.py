@@ -30,16 +30,16 @@ print("Music processing done in {:.2f} seconds".format(time() - start_time))
 num_generations = 100
 population_size = 200
 random_seed = 42
-clearing_interval = 20
-clearing_radius = 0.5
-mutation_probability = 0.05
-crossover_probability = 0.8
-niche_capacity = 5
+clearing_interval = 40
+clearing_radius = 0.9
+mutation_probability = 0.12
+crossover_probability = 0.7
+niche_capacity = 20
 population_initialization_method = "random" # "random" or "elite"
 selection_method = "tournament" # "tournament" or "roulette"
 crossover_method = "two_point" # "single_point" , "two_point" or "rrc"
 sim_metric = "jaccard" # "jaccard", "cosine", "cosine_blurred" or "fenotype"
-Individual_bin_count = 10
+Individual_bin_count = 20
 
 alg = AlgBins(mp=music_processor, random_seed=random_seed, num_generations=num_generations, population_size=population_size, individual_bin_count=Individual_bin_count, mutation_probability=mutation_probability, crossover_probability=crossover_probability, crossover_method=crossover_method, selection_method=selection_method, sim_metric=sim_metric, clearing_radius=clearing_radius, clearing_interval=clearing_interval, niche_capacity=niche_capacity, population_initialization_method=population_initialization_method)
 best_individuals = alg.run()
