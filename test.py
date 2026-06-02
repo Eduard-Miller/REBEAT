@@ -30,7 +30,7 @@ print("Music processing done in {:.2f} seconds".format(time() - start_time))
 num_generations = 100
 population_size = 200
 random_seed = 42
-clearing_interval = 40
+clearing_interval = 20
 clearing_radius = 0.9
 mutation_probability = 0.2
 crossover_probability = 0.5
@@ -77,15 +77,20 @@ results = alg.results()
 for i, ind in enumerate(results):
     print(f"Best individual from niche {i+1}: Fitness = {ind.fitness:.4f}, Nr of bins = {len(ind.genome)} Genome = {ind.genome}")
     
-# plot resulting frames from individuals on magnitude spectrogram
-fig, ax = plt.subplots(figsize=(14, 6))
+# plot resulting frames from individuals on magnitude spectrogram (up to 10 at once)
 S_db = librosa.amplitude_to_db(music_processor.magnitude, ref=np.max)
-img = librosa.display.specshow(S_db, x_axis="frames", y_axis="linear", cmap="magma", ax=ax)
-fig.colorbar(img, ax=ax, format="%+2.0f dB")
-ax.set_title("Magnitude Spectrogram with Individual Bins")
+plot_count = min(10, len(results))
+colors = plt.cm.tab10(np.linspace(0, 1, max(1, plot_count)))
 
-colors = plt.cm.tab10(np.linspace(0, 1, max(1, len(results))))
-for i, ind in enumerate(results):
+cols = 1
+rows = int(np.ceil(plot_count / cols))
+fig, axes = plt.subplots(rows, cols, figsize=(14, 4 * rows), squeeze=False)
+
+for i, ind in enumerate(results[:plot_count]):
+    ax = axes[i // cols][i % cols]
+    img = librosa.display.specshow(S_db, x_axis="frames", y_axis="linear", cmap="magma", ax=ax)
+    ax.set_title(f"Magnitude Spectrogram - Niche {i+1}")
+
     color = colors[i % len(colors)]
     for start, length in ind.genome:
         if length < 0:
@@ -93,8 +98,11 @@ for i, ind in enumerate(results):
         else:
             ax.axvspan(start, start + length, color=color, alpha=0.5, linewidth=0.8, edgecolor=color)
     ax.plot([], [], color=color, label=f"Niche {i+1}")
+    ax.legend(loc="upper right", frameon=True)
 
-ax.legend(loc="upper right", frameon=True)
+# hide unused axes if results < grid size
+for j in range(plot_count, rows * cols):
+    axes[j // cols][j % cols].axis("off")
+
 plt.tight_layout()
 plt.show()
-    
