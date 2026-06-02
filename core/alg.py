@@ -1,4 +1,5 @@
 import numpy as np
+from joblib import Parallel, delayed
 from abc import ABC, abstractmethod
 
 from core.individual import Individual
@@ -105,8 +106,9 @@ class Alg(ABC):
     
     def calc_fitness_population(self, population: list[Individual]):
         # Calculate fitness for all individuals in the population
-        for individual in population:
-            self.calc_fitness_single(individual)
+        Parallel(n_jobs=-1, prefer="threads")(
+            delayed(self.calc_fitness_single)(individual) for individual in population
+        )
         
         
     def clearing(self, population: list[Individual]):
