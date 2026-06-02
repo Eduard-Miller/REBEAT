@@ -28,10 +28,10 @@ print("Music processing done in {:.2f} seconds".format(time() - start_time))
 
 # alg params
 num_generations = 100
-population_size = 200
+population_size = 500
 random_seed = 42
-clearing_interval = 20
-clearing_radius = 0.9
+clearing_interval = 10
+clearing_radius = 0.5
 mutation_probability = 0.2
 crossover_probability = 0.5
 niche_capacity = 20
