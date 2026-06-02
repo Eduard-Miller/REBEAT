@@ -39,19 +39,21 @@ class AlgBinary(Alg):
         self.avg_fitness = np.array([], dtype=np.float16)
         self.worst_fitness = np.array([], dtype=np.float16)
     
-    def initialize_population(self):
+    def initialize_population(self, population_size: int) -> list[Individual_binary]:
         if self.population_initialization_method == "random":
-            self._initialize_random_pop(self.population_size)
+            return self._initialize_random_pop(population_size)
         elif self.population_initialization_method == "elite":
-            self._initialize_elite_pop(self.population_size, k=self.binary_length//10) # top 10%
+            return self._initialize_elite_pop(population_size, k=self.binary_length//10) # top 10%
         else:
             raise ValueError(f"Unknown population initialization method: {self.population_initialization_method}")
         
         
-    def _initialize_random_pop(self, population_size: int):
+    def _initialize_random_pop(self, population_size: int)-> list[Individual_binary]:
         # create random islands of 1s in the binary genome, with random lengths and positions
         islandspreset = [2, 20] # number of islands per genome
         island_length = [(self.binary_length - 1)*0.01, (self.binary_length - 1)*0.1] # length of each island
+        
+        new_population = []
         for _ in range(population_size):
             genome = np.zeros(self.binary_length, dtype=bool)
             num_islands = np.random.randint(islandspreset[0], islandspreset[1] + 1)
@@ -59,10 +61,12 @@ class AlgBinary(Alg):
                 start = np.random.randint(0, self.binary_length - island_length[1])
                 end = start + np.random.randint(island_length[0], island_length[1] + 1) # random length of island
                 genome[start:end] = True
-            self.population.append(Individual_binary(genome))
+            new_population.append(Individual_binary(genome))
+        
+        return new_population
                 
     
-    def _initialize_elite_pop(self, population_size: int, k: int):
+    def _initialize_elite_pop(self, population_size: int, k: int) -> list[Individual_binary]:
         '''
         Initializes population with a random spread of frames, but with the top k similar frames to each frame included in the population. This gives the population a warm start
         '''
@@ -78,9 +82,8 @@ class AlgBinary(Alg):
 
             return Individual_binary(genome)
 
-        self.population = [build_individual(frame) for frame in frames]
-       
-       
+        return [build_individual(frame) for frame in frames]
+
     def similarity(self, individualA: Individual, individualB: Individual) -> float:
         if self.sim_metric == "jaccard":
             return self._similarity_Jaccard(individualA, individualB)

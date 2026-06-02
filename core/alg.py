@@ -34,7 +34,7 @@ class Alg(ABC):
     worst_fitness: np.ndarray
     
     @abstractmethod
-    def initialize_population(self):
+    def initialize_population(self) -> list[Individual]:
         pass
     
     
@@ -168,7 +168,7 @@ class Alg(ABC):
         Run the genetic algorithm with set parameters and return the best individuals from every niche 
         '''
         
-        self.initialize_population()
+        self.population = self.initialize_population(self.population_size)
         self.calc_fitness_population(self.population)
         
         for generation in range(self.num_generations):
@@ -193,6 +193,12 @@ class Alg(ABC):
             
             if generation % self.clearing_interval == 0:
                 new_population = self.clearing(new_population)
+                
+                # fill the rest of the new population with random individuals
+                random = self.initialize_population(self.population_size - len(new_population))
+                # calculate fitness
+                self.calc_fitness_population(random)
+                new_population.extend(random)      
                 
             self.population = new_population
 

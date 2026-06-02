@@ -42,31 +42,34 @@ class AlgBins(Alg):
         self.worst_fitness = np.array([], dtype=np.float16)
     
     
-    def initialize_population(self):
+    def initialize_population(self, population_size: int) -> list[Individual_bins]:
         if self.population_initialization_method == "random":
-            self._initialize_random_pop(self.population_size)
+            return self._initialize_random_pop(population_size)
         elif self.population_initialization_method == "elite":
-            self._initialize_elite_pop(self.population_size, k=self.individual_max_bin_lenght//10) # top 10%
+            return self._initialize_elite_pop(population_size, k=self.individual_max_bin_lenght//10) # top 10%
         else:
             raise ValueError(f"Unknown population initialization method: {self.population_initialization_method}")
         
         
-    def _initialize_random_pop(self, population_size: int):
+    def _initialize_random_pop(self, population_size: int) -> list[Individual_bins]:
         min_total_coverage = 0.01
         max_total_coverage = 0.1
         min_len = max(1, int(np.floor((min_total_coverage * self.individual_max_bin_lenght) / self.individual_bin_count)))
         max_len = max(min_len + 1, int(np.ceil((max_total_coverage * self.individual_max_bin_lenght) / self.individual_bin_count)))
         
+        new_population = []
         for _ in range(population_size):
             new_genome = [
                 (int(np.random.randint(0, self.individual_max_bin_lenght)), int(np.random.randint(min_len, max_len + 1)))
                 for _ in range(self.individual_bin_count)
             ]
             new_genome.sort(key=lambda x: x[0]) # sort genome by index
-            self.population.append(Individual_bins(new_genome, self.individual_max_bin_lenght))
-          
-            
-    def _initialize_elite_pop(self, population_size: int, k: int):
+            new_individual = Individual_bins(new_genome, self.individual_max_bin_lenght)
+            new_population.append(new_individual)
+
+        return new_population
+
+    def _initialize_elite_pop(self, population_size: int, k: int) -> list[Individual_bins]:
         '''
         Initializes population with a random spread of frames, but with the top k similar frames to each frame included in the population. This gives the population a warm start
         '''
@@ -87,9 +90,8 @@ class AlgBins(Alg):
 
             return Individual_bins(genome, self.individual_max_bin_lenght)
 
-        self.population = [build_individual(frame) for frame in frames]
-    
-    
+        return [build_individual(frame) for frame in frames]
+
     def similarity(self, individualA: Individual, individualB: Individual) -> float:
         if self.sim_metric == "jaccard":
             return self._similarity_Jaccard(individualA, individualB)
