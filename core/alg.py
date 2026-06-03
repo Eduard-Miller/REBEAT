@@ -53,8 +53,8 @@ class Alg(ABC):
                     self.similarity_memo[i, j] = similarity
                     self.similarity_memo[j, i] = similarity
                     
-    def reset_similarity_memo(self):
-        self.similarity_memo = np.full((self.population_size, self.population_size), np.nan, dtype=np.float16)
+    def reset_similarity_memo(self, shape: int):
+        self.similarity_memo = np.full((shape, shape), np.nan, dtype=np.float16)
     
     
     def selection(self, population: list[Individual]) -> Individual:
@@ -62,9 +62,10 @@ class Alg(ABC):
             return self._tournament_selection(population)
         elif self.selection_method == "roulette":
             return self._roulette_selection(population)
+        elif self.selection_method == "rts":
+            return self._restricted_tournament_selection(population)
         else:
             raise ValueError(f"Unknown selection method: {self.selection_method}")
-    
     
     def _tournament_selection(self, population: list[Individual], k: int = 3) -> Individual:
         k = min(k, self.niche_capacity)
@@ -74,6 +75,22 @@ class Alg(ABC):
         tournament.sort(key=lambda ind: ind.fitness, reverse=True) # sort by fitness
         return tournament[0] # return the fittest individual in the tournament
     
+    def _restricted_tournament_selection(self, population: list[Individual], k: int = 10, n: int = 5) -> Individual:
+        '''Tournament selection among the k most similar individuals to a randomly chosen individual from the population, to preserve diversity'''
+        # error checking
+        if len(population) < k:
+            raise ValueError(f"Neighborhood size k={k} cannot be larger than the population size {len(population)}")
+        if n > k:
+            raise ValueError(f"Tournament size n={n} cannot be larger than the neighborhood size k={k}")
+        
+        selected = np.random.randint(len(population))
+        
+        neighborhood_indices = np.argsort(self.similarity_memo[selected])[-k:] # get the indices of the k most similar individuals to the selected individual including itself
+        tournament = np.random.choice(neighborhood_indices, size=n, replace=False)
+        tournament_individuals = [population[idx] for idx in tournament]
+        tournament_individuals.sort(key=lambda ind: ind.fitness, reverse=True)
+        
+        return tournament_individuals[0]
     
     def _roulette_selection(self, population: list[Individual]) -> Individual:
         fitnesses = np.array([ind.fitness for ind in population])
@@ -172,8 +189,10 @@ class Alg(ABC):
         self.calc_fitness_population(self.population)
         
         for generation in range(self.num_generations):
-            new_population = []
+            if self.selection_method == "rts":
+                self.calc_similarity_pop(self.population)
             
+            new_population = []
             while len(new_population) < self.population_size:
                 parentA = self.selection(self.population)
                 parentB = self.selection(self.population)
@@ -189,6 +208,7 @@ class Alg(ABC):
             new_population = new_population[:self.population_size]
             
             self.calc_fitness_population(new_population) # calculate fitness for the new population before clearing, to have the fitness values ready for clearing
+            self.reset_similarity_memo(len(new_population))
             self.calc_similarity_pop(new_population) # calculate similarity for the new population before clearing, to have the memo ready for clearing
             
             if generation % self.clearing_interval == 0:
@@ -208,8 +228,7 @@ class Alg(ABC):
             new_avg_similarity = np.mean(sim_values) if len(sim_values) > 0 else 0.0
             
             self.avg_similarity = np.append(self.avg_similarity, new_avg_similarity)
-            self.reset_similarity_memo()
-            
+            self.reset_similarity_memo(len(self.population))            
 
     def results(self) -> list[Individual]:            
         # clear the final population to get the best individuals from each niche
