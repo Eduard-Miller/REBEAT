@@ -11,18 +11,15 @@ class AlgBins(Alg):
     individual_bin_count: int # number of tuples in genome of all individuals 
     individual_max_bin_lenght: int # total number of frames in song stored for easy access
       
-    def __init__(self, mp: mp.MusicProcessingProvider, random_seed: int, num_generations: int, population_size: int, individual_bin_count: int, mutation_probability: float, crossover_probability: float, crossover_method: str, selection_method: str, sim_metric: str, clearing_radius: float, clearing_interval: int, niche_capacity: int, population_initialization_method: str):
+    def __init__(self, mp: mp.MusicProcessingProvider, random_seed: int, num_generations: int, population_size: int, individual_bin_count: int, mutation_probability: float, crossover_probability: float, crossover_method: str, selection_method: str, sim_metric: str, sharing_radius: float, population_initialization_method: str):
         self.mp = mp
         np.random.seed(random_seed)  
               
         self.num_generations = num_generations
         self.population_size = population_size
-        self.clearing_interval = clearing_interval
-        self.clearing_radius = clearing_radius
+        self.sharing_radius = sharing_radius
         self.mutation_probability = mutation_probability
         self.crossover_probability = crossover_probability
-        self.niche_capacity = niche_capacity
-        
         
         self.population_initialization_method = population_initialization_method
         self.crossover_method = crossover_method
@@ -36,10 +33,12 @@ class AlgBins(Alg):
         self.similarity_memo = np.full((population_size, population_size), np.nan, dtype=np.float16) # initialize similarity memoization matrix with NaN values
         
         self.avg_similarity = np.array([], dtype=np.float16)
-        self.removed_by_clearing = np.array([], dtype=np.int16)
         self.best_fitness = np.array([], dtype=np.float16)
         self.avg_fitness = np.array([], dtype=np.float16)
         self.worst_fitness = np.array([], dtype=np.float16)
+        self.best_shared_fitness = np.array([], dtype=np.float16)
+        self.avg_shared_fitness = np.array([], dtype=np.float16)
+        self.worst_shared_fitness = np.array([], dtype=np.float16)
     
     
     def initialize_population(self):
@@ -292,22 +291,8 @@ class AlgBins(Alg):
         if n_frames < 2:
             individual.update_individual(fitness=0.0)
             return
-
-        # Cohesion (Average pairwise similarity)
-        # sub_sim_matrix = self.mp.sim_matrix[np.ix_(frames, frames)]
-        # sum_similarities = np.sum(sub_sim_matrix) - n_frames # Remove diagonal 1s
-        # num_pairs = n_frames * (n_frames - 1)
-        # cohesion = sum_similarities / num_pairs
-
-        # Length reward factor
-        # length_reward = np.log1p(n_frames)
         
-        # fitness = cohesion * length_reward
-        
-        # individual.update_individual(fitness=fitness)
-        
-        # alternate fitness: sum up all pairwise similarity values -scaled by (2x-1)^3 [-1,1] for x {0-1} such that bad frames lower fitness instead of contributing to length reward, and good frames increase fitness more than they would with the length reward
-        
+        # fitness: sum up all pairwise similarity values -scaled by (2x-1)^3 [-1,1] for x {0-1} such that bad frames lower fitness instead of contributing to length reward, and good frames increase fitness more than they would with the length reward
         sub_sim_matrix = self.mp.sim_matrix[np.ix_(frames, frames)]
         fitness = np.sum((2*sub_sim_matrix-1)**3) - n_frames # Last part removes diagonal x = 1 -> 1 * n_frames
         

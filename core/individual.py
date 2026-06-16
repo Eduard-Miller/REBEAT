@@ -5,6 +5,7 @@ from typing import Any
 class Individual(ABC):
     genome: Any # can be any representation of the genome, will be defined in the specific individual classes
     fitness: float
+    shared_fitness: float
     fenotype: np.ndarray # median frame of the genome, stored to avoid redundant calculations during similarity comparisons
     
     @abstractmethod

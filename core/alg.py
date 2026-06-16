@@ -11,11 +11,9 @@ class Alg(ABC):
     # parameters
     num_generations: int
     population_size: int
-    clearing_interval: int
-    clearing_radius: float
+    sharing_radius: float
     mutation_probability: float
     crossover_probability: float
-    niche_capacity: int
     
     # experiment parameters
     population_initialization_method: str
@@ -24,14 +22,16 @@ class Alg(ABC):
     sim_metric: str
     
     population: list[Individual]
-    similarity_memo: np.ndarray # memoization for similarity calculations, to avoid redundant calculations during clearing
+    similarity_memo: np.ndarray # memoization for similarity calculations, to avoid redundant calculations during clearing 2d array of shape (population_size, population_size) with values initialized to np.nan, where similarity_memo[i, j] stores the similarity between population[i] and population[j]
     
     # metrics to track
     avg_similarity: np.ndarray
-    removed_by_clearing: np.ndarray
     best_fitness: np.ndarray
     avg_fitness: np.ndarray
     worst_fitness: np.ndarray
+    best_shared_fitness: np.ndarray
+    avg_shared_fitness: np.ndarray
+    worst_shared_fitness: np.ndarray
     
     @abstractmethod
     def initialize_population(self):
@@ -67,16 +67,15 @@ class Alg(ABC):
     
     
     def _tournament_selection(self, population: list[Individual], k: int = 3) -> Individual:
-        k = min(k, self.niche_capacity)
         if len(population) < k:
             raise ValueError(f"Tournament size k={k} cannot be larger than the population size {len(population)}")
         tournament = list(np.random.choice(population, size=k, replace=False))
-        tournament.sort(key=lambda ind: ind.fitness, reverse=True) # sort by fitness
+        tournament.sort(key=lambda ind: ind.shared_fitness, reverse=True) # sort by shared fitness
         return tournament[0] # return the fittest individual in the tournament
     
     
     def _roulette_selection(self, population: list[Individual]) -> Individual:
-        fitnesses = np.array([ind.fitness for ind in population])
+        fitnesses = np.array([ind.shared_fitness for ind in population])
         min_fitness = np.min(fitnesses)
         if min_fitness < 0:
             fitnesses = fitnesses - min_fitness
@@ -111,11 +110,40 @@ class Alg(ABC):
         )
         
         
-    def clearing(self, population: list[Individual]):
+    def calc_shared_fitness_population(self, population: list[Individual]):
+        # Ensure sharing_radius is treated as a float
+        sigma_sim = self.sharing_radius
+        alpha = 1.0
+        
+        # 1. Vectorized calculation of the sharing matrix
+        # Get the raw similarity matrix from your memo
+        sim_matrix = np.array(self.similarity_memo)
+        
+        # Apply the threshold condition: if sim >= sigma_sim, apply formula, else 0
+        # We use np.where to handle the conditional logic instantly across the whole matrix
+        sharing_matrix = np.where(
+            (sim_matrix >= sigma_sim) & (~np.isnan(sim_matrix)),
+            ((sim_matrix - sigma_sim) / (1 - sigma_sim)) ** alpha,
+            0.0
+        )
+        
+        # 2. Calculate niche counts (sum of rows)
+        # This automatically includes self-similarity (the diagonal will be 1.0)
+        # and correctly counts actual identical clones in the population.
+        niche_counts = np.sum(sharing_matrix, axis=1)
+        
+        # 3. Update individuals sequentially (incredibly fast now that math is done)
+        for i, individual in enumerate(population):
+            # Prevent any weird edge cases where niche_count < 1
+            niche_count = max(1.0, niche_counts[i])
+            
+            shared_fitness = individual.fitness / niche_count
+            individual.update_individual(shared_fitness=shared_fitness)
+        
+        
+    def clearing(self, population: list[Individual], niche_capacity: int = 1) -> list[Individual]:
         # sort the pop by fitness
-        population.sort(key=lambda ind: ind.fitness, reverse=True)
-        # reset memo since population order changed
-        # self.reset_similarity_memo()
+        population.sort(key=lambda ind: ind.shared_fitness, reverse=True)
         # keep track of which individuals have been cleared
         cleared = np.zeros(len(population), dtype=bool)
         remove_indices: set[int] = set()
@@ -138,10 +166,10 @@ class Alg(ABC):
                             self.similarity_memo[i, j] = similarity
                             self.similarity_memo[j, i] = similarity
 
-                    if similarity >= self.clearing_radius:
-                        if niche_count < self.niche_capacity:
-                            if i != j:
-                                population[j].update_individual(fitness=0.0) # Clear the fitness of similar individuals, but not the niche winner
+                    if similarity >= self.sharing_radius:
+                        if niche_count < niche_capacity:
+                            # if i != j:
+                                # population[j].update_individual(fitness=0.0) # Clear the fitness of similar individuals, but not the niche winner
                             cleared[j] = True
                             niche_count += 1
                         else:
@@ -149,16 +177,6 @@ class Alg(ABC):
 
         if remove_indices:
             population = [ind for idx, ind in enumerate(population) if idx not in remove_indices]
-
-        # log stuff
-        self.removed_by_clearing = np.append(self.removed_by_clearing, len(remove_indices)) # individuals removed by clearing
-        
-        # # average similarity in similarity memo as a diversity metric, excluding NaN values and self-similarity
-        # sim_values = self.similarity_memo[~np.isnan(self.similarity_memo)]
-        # sim_values = sim_values[sim_values < 1.0] # exclude self-similarity
-        # new_avg_similarity = np.mean(sim_values) if len(sim_values) > 0 else 0.0
-        
-        # self.avg_similarity = np.append(self.avg_similarity, new_avg_similarity)
         
         return population
         
@@ -169,7 +187,9 @@ class Alg(ABC):
         '''
         
         self.initialize_population()
+        self.calc_similarity_pop(self.population)
         self.calc_fitness_population(self.population)
+        self.calc_shared_fitness_population(self.population)
         
         for generation in range(self.num_generations):
             new_population = []
@@ -188,12 +208,10 @@ class Alg(ABC):
             # ensure new population does not exceed population size (can only happen if population size is odd, since we add 2 children at a time)
             new_population = new_population[:self.population_size]
             
-            self.calc_fitness_population(new_population) # calculate fitness for the new population before clearing, to have the fitness values ready for clearing
-            self.calc_similarity_pop(new_population) # calculate similarity for the new population before clearing, to have the memo ready for clearing
+            self.calc_similarity_pop(new_population)
+            self.calc_fitness_population(new_population)
+            self.calc_shared_fitness_population(new_population)
             
-            if generation % self.clearing_interval == 0:
-                new_population = self.clearing(new_population)
-                
             self.population = new_population
 
             # log pop fitness to track progress
@@ -202,6 +220,11 @@ class Alg(ABC):
             self.avg_fitness = np.append(self.avg_fitness, np.mean(fitness_values))
             self.worst_fitness = np.append(self.worst_fitness, np.min(fitness_values))
             
+            shared_fitness_values = [ind.shared_fitness for ind in self.population]
+            self.best_shared_fitness = np.append(self.best_shared_fitness, np.max(shared_fitness_values))
+            self.avg_shared_fitness = np.append(self.avg_shared_fitness, np.mean(shared_fitness_values))
+            self.worst_shared_fitness = np.append(self.worst_shared_fitness, np.min(shared_fitness_values))
+
             # average similarity in similarity memo as a diversity metric, excluding NaN values and self-similarity
             sim_values = self.similarity_memo[~np.isnan(self.similarity_memo)]
             sim_values = sim_values[sim_values < 1.0] # exclude self-similarity
@@ -213,12 +236,9 @@ class Alg(ABC):
 
     def results(self) -> list[Individual]:            
         # clear the final population to get the best individuals from each niche
-        original_niche_capacity = self.niche_capacity
-        self.niche_capacity = 1 # set niche capacity to 1 to only keep the best individual from each niche
         final_population = self.population.copy()
         final_population = self.clearing(final_population)
-        self.calc_fitness_population(final_population) # recalculate fitness for the final population after clearing, to have the correct fitness values for the best individuals
-        
-        self.niche_capacity = original_niche_capacity # restore original niche capacity for future runs if needed
-        
+        self.calc_fitness_population(final_population)
+        self.calc_shared_fitness_population(final_population)
+                
         return final_population
