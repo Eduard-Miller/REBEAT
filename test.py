@@ -27,12 +27,12 @@ music_processor = mp(path, duration, nfft, hop_length, win_length, window_type)
 print("Music processing done in {:.2f} seconds".format(time() - start_time))
 
 # alg params
-num_generations = 100
-population_size = 200
+num_generations = 500
+population_size = 600
 random_seed = 42
 sharing_radius = 0.7
-mutation_probability = 0.2
-crossover_probability = 0.5
+mutation_probability = 0.15
+crossover_probability = 0.7
 population_initialization_method = "random" # "random" or "elite"
 selection_method = "tournament" # "tournament" or "roulette"
 crossover_method = "two_point" # "single_point" , "two_point" or "rrc"
@@ -44,6 +44,13 @@ best_individuals = alg.run()
 
 end_time = time()
 print(f"Execution time: {end_time - start_time:.2f} seconds")
+
+# # calc similarity to plot distribution of similarities in final population
+# alg.calc_similarity_population(alg.population)
+
+# sim_values = alg.similarity_memo
+
+
 
 # plot stored metrics
 plt.figure(figsize=(14, 8))
@@ -72,7 +79,7 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
-results = alg.results()
+results = alg.results(clearing_radius=0.5)
 for i, ind in enumerate(results):
     print(f"Best individual from niche {i+1}: Fitness = {ind.fitness:.4f}, Nr of bins = {len(ind.genome)} Genome = {ind.genome}")
     
