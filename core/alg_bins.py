@@ -148,10 +148,12 @@ class AlgBins(Alg):
         '''
         if individualA.fenotype is None:
             median_A = self.mp.calc_median_frame(np.flatnonzero(individualA.genome_bin))
+            individualA.update_individual(fenotype=median_A)
         else:
             median_A = individualA.fenotype
         if individualB.fenotype is None:
             median_B = self.mp.calc_median_frame(np.flatnonzero(individualB.genome_bin))
+            individualB.update_individual(fenotype=median_B)
         else:
             median_B = individualB.fenotype
 
@@ -236,6 +238,7 @@ class AlgBins(Alg):
         if np.random.rand() < prob:
             self._toggle_mutation(individual, min_length=-10, max_length=10)
         
+        
     
     def _shift_mutation(self, individual: Individual_bins):
         random_bin_index = np.random.randint(0, len(individual.genome))
@@ -250,7 +253,7 @@ class AlgBins(Alg):
         
         new_genome.sort(key=lambda x: x[0]) # sort genome by index
     
-        individual.update_individual(genome=new_genome)
+        individual.update_individual(genome=new_genome, fenotype=None)
         
     
     def _length_mutation(self, individual: Individual_bins):
@@ -265,7 +268,7 @@ class AlgBins(Alg):
         new_genome = individual.genome.copy()
         new_genome[random_bin_index] = (int(new_genome[random_bin_index][0]), new_length) # keep the same index, just change the length
         
-        individual.update_individual(genome=new_genome)
+        individual.update_individual(genome=new_genome, fenotype=None)
 
 
     def _toggle_mutation(self, individual: Individual_bins, min_length: int, max_length: int):
@@ -281,7 +284,7 @@ class AlgBins(Alg):
         new_genome = individual.genome.copy()
         new_genome[random_bin_index] = (int(new_genome[random_bin_index][0]), int(new_length)) # keep the same index, just toggle the length
         
-        individual.update_individual(genome=new_genome)
+        individual.update_individual(genome=new_genome, fenotype=None)
 
 
     def calc_fitness_single(self, individual: Individual):
