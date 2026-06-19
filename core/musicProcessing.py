@@ -40,7 +40,7 @@ class MusicProcessingProvider:
         return top_k_indices
 
     def median_filter(self, frames: np.ndarray) -> np.ndarray:
-        # Apply width wise median filtering (per frequency bin) to the specified frames and 0 out the rest
+        # Apply width wise median filtering (per frequency bin) to the specified frames and 0 out the rest creating the repeating model W
         filtered_data = np.zeros_like(self.magnitude)
         median = np.median(self.magnitude[:, frames], axis=1)
         for frame in frames:

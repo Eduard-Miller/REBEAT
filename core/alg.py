@@ -226,8 +226,7 @@ class Alg(ABC):
             self.worst_shared_fitness = np.append(self.worst_shared_fitness, np.min(shared_fitness_values))
 
             # average similarity in similarity memo as a diversity metric, excluding NaN values and self-similarity
-            sim_values = self.similarity_memo[~np.isnan(self.similarity_memo)]
-            sim_values = sim_values[sim_values < 1.0] # exclude self-similarity
+            sim_values = self.similarity_memo[~np.eye(self.population_size, dtype=bool) & ~np.isnan(self.similarity_memo)]
             new_avg_similarity = np.mean(sim_values) if len(sim_values) > 0 else 0.0
             
             self.avg_similarity = np.append(self.avg_similarity, new_avg_similarity)
