@@ -190,11 +190,15 @@ class Alg(ABC):
         self.initialize_population()
         self.calc_similarity_pop(self.population)
         self.calc_fitness_population(self.population)
-        self.calc_shared_fitness_population(self.population)
+        self.calc_shared_fitness_population(self.population)    
         
         for generation in tqdm(range(self.num_generations), desc="Generations"):
             new_population = []
             
+            # elitism
+            self.population.sort(key=lambda ind: ind.fitness, reverse=True)
+            new_population.extend(self.population[:self.population_size // 20])
+                        
             while len(new_population) < self.population_size:
                 parentA = self.selection(self.population)
                 parentB = self.selection(self.population)
