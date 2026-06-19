@@ -1,6 +1,7 @@
 import numpy as np
 from joblib import Parallel, delayed
 from abc import ABC, abstractmethod
+from tqdm import tqdm
 
 from core.individual import Individual
 import core.musicProcessing as mp
@@ -191,7 +192,7 @@ class Alg(ABC):
         self.calc_fitness_population(self.population)
         self.calc_shared_fitness_population(self.population)
         
-        for generation in range(self.num_generations):
+        for generation in tqdm(range(self.num_generations), desc="Generations"):
             new_population = []
             
             while len(new_population) < self.population_size:

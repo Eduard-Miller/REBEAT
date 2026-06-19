@@ -81,8 +81,6 @@ class AlgBins(Alg):
             genome_bin[top_k_indices] = True
 
             genome = binary_to_bins(genome_bin, self.individual_bin_count)
-            genome = [(int(i), int(length)) for i, length in genome]
-            genome.sort(key=lambda x: x[0]) # sort genome by index
 
             return Individual_bins(genome, self.individual_max_bin_lenght)
 
@@ -218,11 +216,6 @@ class AlgBins(Alg):
         
         childA_genome = binary_to_bins(childA_bin, self.individual_bin_count)
         childB_genome = binary_to_bins(childB_bin, self.individual_bin_count)
-        childA_genome = [(int(i), int(length)) for i, length in childA_genome]
-        childB_genome = [(int(i), int(length)) for i, length in childB_genome]
-        
-        childA_genome.sort(key=lambda x: x[0]) # sort genome by index
-        childB_genome.sort(key=lambda x: x[0]) # sort genome by index
         
         return Individual_bins(childA_genome, self.individual_max_bin_lenght), Individual_bins(childB_genome, self.individual_max_bin_lenght)
          

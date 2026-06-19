@@ -31,13 +31,17 @@ class Individual_bins(Individual):
         '''
         binary = np.zeros(self.max_bin_lenght, dtype=np.bool)
         
-        for bin in self.genome:
-            if bin[0] + bin[1] < self.max_bin_lenght: # normal case, the bin fits within bounds
-                binary[bin[0]:bin[0]+bin[1]] = True
-            elif bin[0] + bin[1] < 0: # if the bin exceeds the start index, just set all preceding bits to 1
-                binary[:bin[0]] = True
-            else:
-                binary[bin[0]:] = True # if the bin exceeds the max length, just set all remaining bits to 1
+        for start, length in self.genome:
+            end = start + length
+            # Handle both positive and negative lengths
+            idx_start, idx_end = (start, end) if length >= 0 else (end, start)
+            
+            # Clip to valid range
+            idx_start = max(0, min(self.max_bin_lenght, idx_start))
+            idx_end = max(0, min(self.max_bin_lenght, idx_end))
+            
+            binary[int(idx_start):int(idx_end)] = True
+            
         self.genome_bin = binary
             
     def _update_fenotype(self, fenotype: np.ndarray): # calculated externally
@@ -67,11 +71,11 @@ def binary_to_bins(genome_bin: np.ndarray, max_bin_count: int) -> list[tuple[int
     bins = list(zip(starts.tolist(), (ends - starts).tolist()))
     
     # should only occur during initialization
-    if len(bins) > max_bin_count:
-        # If the number of bins exceeds the maximum genome length, we can keep only the longest bins until we reach the limit
-        bins.sort(key=lambda x: x[1], reverse=True) # Sort bins by length
-        bins = bins[:max_bin_count] # Keep only the longest bins up to the maximum genome length
-        bins.sort(key=lambda x: x[0]) # Sort bins back
+    # if len(bins) > max_bin_count:
+    #     # If the number of bins exceeds the maximum genome length, we can keep only the longest bins until we reach the limit
+    #     bins.sort(key=lambda x: x[1], reverse=True) # Sort bins by length
+    #     bins = bins[:max_bin_count] # Keep only the longest bins up to the maximum genome length
+    #     bins.sort(key=lambda x: x[0]) # Sort bins back
                     
     return bins
         
