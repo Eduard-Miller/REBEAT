@@ -141,46 +141,6 @@ class Alg(ABC):
             shared_fitness = individual.fitness / niche_count
             individual.update_individual(shared_fitness=shared_fitness)
         
-        
-    def clearing(self, population: list[Individual], niche_capacity: int = 1) -> list[Individual]:
-        # sort the pop by fitness
-        population.sort(key=lambda ind: ind.shared_fitness, reverse=True)
-        # keep track of which individuals have been cleared
-        cleared = np.zeros(len(population), dtype=bool)
-        remove_indices: set[int] = set()
-        
-        for i in range(len(population)):
-            if cleared[i]:
-                continue
-            else:
-                niche_count = 0
-                for j in range(i, len(population)):
-                    if j in remove_indices:
-                        continue
-
-                    if i == j:
-                        similarity = 1.0
-                    else:
-                        similarity = self.similarity_memo[i, j]
-                        if np.isnan(similarity):
-                            similarity = self.similarity(population[i], population[j])
-                            self.similarity_memo[i, j] = similarity
-                            self.similarity_memo[j, i] = similarity
-
-                    if similarity >= self.sharing_radius:
-                        if niche_count < niche_capacity:
-                            # if i != j:
-                                # population[j].update_individual(fitness=0.0) # Clear the fitness of similar individuals, but not the niche winner
-                            cleared[j] = True
-                            niche_count += 1
-                        else:
-                            remove_indices.add(j)
-
-        if remove_indices:
-            population = [ind for idx, ind in enumerate(population) if idx not in remove_indices]
-        
-        return population
-        
     
     def run(self):
         '''
