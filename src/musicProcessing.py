@@ -63,4 +63,13 @@ class MusicProcessingProvider:
         return M
 
     def apply_mask(self, data: np.ndarray, M: np.ndarray) -> np.ndarray:
-        return data * M
+        masked_data = data * M
+    
+        # Add an extremely tiny amount of random phase/energy floor (dither) 
+        # so that silent frames aren't absolute zero, preventing singular matrices in museval
+        floor = 1e-8 * np.random.randn(*masked_data.shape) + 1e-8 * 1j * np.random.randn(*masked_data.shape)
+
+        # Only apply the floor where the mask has zeroed things out
+        masked_data = np.where(M == 0, floor, masked_data)
+
+        return masked_data
