@@ -3,8 +3,8 @@ from joblib import Parallel, delayed
 from abc import ABC, abstractmethod
 from tqdm import tqdm
 
-from core.individual import Individual
-import core.musicProcessing as mp
+from src.individual import Individual
+import src.musicProcessing as mp
 
 class Alg(ABC):
     mp: mp.MusicProcessingProvider
@@ -71,12 +71,12 @@ class Alg(ABC):
         if len(population) < k:
             raise ValueError(f"Tournament size k={k} cannot be larger than the population size {len(population)}")
         tournament = list(np.random.choice(population, size=k, replace=False))
-        tournament.sort(key=lambda ind: ind.shared_fitness, reverse=True) # sort by shared fitness
+        tournament.sort(key=lambda ind: ind.fitness, reverse=True) # sort by shared fitness
         return tournament[0] # return the fittest individual in the tournament
     
     
     def _roulette_selection(self, population: list[Individual]) -> Individual:
-        fitnesses = np.array([ind.shared_fitness for ind in population])
+        fitnesses = np.array([ind.fitness for ind in population])
         min_fitness = np.min(fitnesses)
         if min_fitness < 0:
             fitnesses = fitnesses - min_fitness
@@ -148,9 +148,9 @@ class Alg(ABC):
         '''
         
         self.initialize_population()
-        self.calc_similarity_pop(self.population)
+        # self.calc_similarity_pop(self.population)
         self.calc_fitness_population(self.population)
-        self.calc_shared_fitness_population(self.population)    
+        # self.calc_shared_fitness_population(self.population)    
         
         for generation in tqdm(range(self.num_generations), desc="Generations"):
             new_population = []
@@ -173,9 +173,9 @@ class Alg(ABC):
             # ensure new population does not exceed population size (can only happen if population size is odd, since we add 2 children at a time)
             new_population = new_population[:self.population_size]
             
-            self.calc_similarity_pop(new_population)
+            # self.calc_similarity_pop(new_population)
             self.calc_fitness_population(new_population)
-            self.calc_shared_fitness_population(new_population)
+            # self.calc_shared_fitness_population(new_population)
             
             self.population = new_population
 

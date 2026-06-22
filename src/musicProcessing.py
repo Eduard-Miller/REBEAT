@@ -4,6 +4,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 class MusicProcessingProvider:
     path = ""
+    sr = None
     stft = None
     magnitude = None
     sim_matrix = None
@@ -16,7 +17,7 @@ class MusicProcessingProvider:
         self.sim_matrix = self.calc_sim_matrix()
 
     def calc_STFT(self, duration: float, nfft: int, hop_length: int, win_length: int, window_type: str) -> np.ndarray:
-        y, _ = librosa.load(self.path, sr=None, duration=duration)
+        y, self.sr = librosa.load(self.path, sr=None, duration=duration)
         stft_result = librosa.stft(y, n_fft=nfft, hop_length=hop_length, win_length=win_length, window=window_type)
         return stft_result
 

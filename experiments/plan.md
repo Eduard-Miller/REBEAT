@@ -1,0 +1,6 @@
+# Plan
+
+- Experiment 1: Run the algorithm changing up the similarity metric and cross-over method for 10 different rng seeds
+- Experiment 2: Keep the best cross-over method and similarity metric, but exclude one mutation method at a time, to see how much each mutation method contributes to the final result. Also for 10 different rng seeds.
+- Experiment 3: Analyze baby_slakh's activity patterns, and perform median filtering on the time frames where each source stem is active for each track. Use BSS Eval to evaluate the results compared to the best matching source stem. calc results on full stems. Calculate a repetiveness score for each source stem, and see if there is a correlation between repetiveness and metrics of the median filtered results.
+- Experiment 4: Run the algorithm with a narrow selection of good parameters on baby_slakh compare the resulting timeframes to the best matching source stems (in terms of activity), to see how well the algorithm matches that source stem. Use BSS Eval to evaluate the results compared to the best matching source stem. calc results both on full stem and on the active timeframes of the stem.

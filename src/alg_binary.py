@@ -1,10 +1,10 @@
 import numpy as np
 
-from core import individual
-import core.musicProcessing as mp
-from core.alg import Alg
-from core.individual import Individual
-from core.individual_binary import Individual_binary
+from src import individual
+import src.musicProcessing as mp
+from src.alg import Alg
+from src.individual import Individual
+from src.individual_binary import Individual_binary
 
 class AlgBinary(Alg):
     binary_length: int

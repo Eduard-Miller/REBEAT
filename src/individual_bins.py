@@ -1,6 +1,6 @@
 import numpy as np
 
-from core.individual import Individual
+from src.individual import Individual
 
 class Individual_bins(Individual):
     max_bin_lenght: int

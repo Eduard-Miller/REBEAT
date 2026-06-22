@@ -5,12 +5,14 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "fast-bss-eval>=0.1.4",
     "gradio>=6.11.0",
     "ipykernel>=7.3.0",
     "librosa>=0.11.0",
     "matplotlib>=3.10.8",
     "numpy>=2.4.4",
     "pandas>=3.0.2",
+    "pretty-midi>=0.2.11",
     "scikit-learn>=1.8.0",
     "scipy>=1.17.1",
     "setuptools>=82.0.1",
