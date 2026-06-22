@@ -1335,6 +1335,7 @@ dependencies = [
     { name = "snakeviz" },
     { name = "sortedcontainers" },
     { name = "soundfile" },
+    { name = "tqdm" },
     { name = "wheel" },
 ]
 
@@ -1352,6 +1353,7 @@ requires-dist = [
     { name = "snakeviz", specifier = ">=2.2.2" },
     { name = "sortedcontainers", specifier = ">=2.4.0" },
     { name = "soundfile", specifier = ">=0.13.1" },
+    { name = "tqdm", specifier = ">=4.67.3" },
     { name = "wheel", specifier = ">=0.47.0" },
 ]
 

@@ -17,5 +17,6 @@ dependencies = [
     "snakeviz>=2.2.2",
     "sortedcontainers>=2.4.0",
     "soundfile>=0.13.1",
+    "tqdm>=4.67.3",
     "wheel>=0.47.0",
 ]
