@@ -1,10 +1,10 @@
 import numpy as np
 
-import src.musicProcessing as mp
-from src.alg import Alg
-from src.individual import Individual
-from src.individual_bins import Individual_bins
-from src.individual_bins import binary_to_bins
+import musicProcessing as mp
+from alg import Alg
+from individual import Individual
+from individual_bins import Individual_bins
+from individual_bins import binary_to_bins
 
 
 class AlgBins(Alg):

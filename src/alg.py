@@ -3,8 +3,8 @@ from joblib import Parallel, delayed
 from abc import ABC, abstractmethod
 from tqdm import tqdm
 
-from src.individual import Individual
-import src.musicProcessing as mp
+from individual import Individual
+import musicProcessing as mp
 
 class Alg(ABC):
     mp: mp.MusicProcessingProvider
