@@ -148,9 +148,9 @@ class Alg(ABC):
         '''
         
         self.initialize_population()
-        # self.calc_similarity_pop(self.population)
+        self.calc_similarity_pop(self.population)
         self.calc_fitness_population(self.population)
-        # self.calc_shared_fitness_population(self.population)    
+        self.calc_shared_fitness_population(self.population)    
         
         for generation in tqdm(range(self.num_generations), desc="Generations"):
             new_population = []
@@ -173,9 +173,9 @@ class Alg(ABC):
             # ensure new population does not exceed population size (can only happen if population size is odd, since we add 2 children at a time)
             new_population = new_population[:self.population_size]
             
-            # self.calc_similarity_pop(new_population)
+            self.calc_similarity_pop(new_population)
             self.calc_fitness_population(new_population)
-            # self.calc_shared_fitness_population(new_population)
+            self.calc_shared_fitness_population(new_population)
             
             self.population = new_population
 
@@ -196,13 +196,3 @@ class Alg(ABC):
             
             self.avg_similarity = np.append(self.avg_similarity, new_avg_similarity)
             self.reset_similarity_memo()
-            
-
-    def results(self) -> list[Individual]:            
-        # clear the final population to get the best individuals from each niche
-        final_population = self.population.copy()
-        final_population = self.clearing(final_population)
-        self.calc_fitness_population(final_population)
-        self.calc_shared_fitness_population(final_population)
-                
-        return final_population
