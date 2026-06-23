@@ -71,12 +71,12 @@ class Alg(ABC):
         if len(population) < k:
             raise ValueError(f"Tournament size k={k} cannot be larger than the population size {len(population)}")
         tournament = list(np.random.choice(population, size=k, replace=False))
-        tournament.sort(key=lambda ind: ind.fitness, reverse=True) # sort by shared fitness
+        tournament.sort(key=lambda ind: ind.shared_fitness, reverse=True) # sort by shared fitness
         return tournament[0] # return the fittest individual in the tournament
     
     
     def _roulette_selection(self, population: list[Individual]) -> Individual:
-        fitnesses = np.array([ind.fitness for ind in population])
+        fitnesses = np.array([ind.shared_fitness for ind in population])
         min_fitness = np.min(fitnesses)
         if min_fitness < 0:
             fitnesses = fitnesses - min_fitness
