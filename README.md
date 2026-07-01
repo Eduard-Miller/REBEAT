@@ -1,45 +1,8 @@
-# REBEAT
+# REBEAT: Unsupervised Music Source Separation of the “Other” Stem through Repetition Pattern Discovery
+Accompanying implementation and experiment settup to my master's thesis finished 01.07.2026, and can be searched up in [Norwegian Research Information Repository](https://nva.sikt.no/)
 
-Detect repeating musical patterns and visualize them as color-coded regions on an STFT spectrogram.
+## Abstract
+Music Source Separation (MSS) is a common task within music information retrieval and audio signal processing, where the goal is to separate a mixed audio signal into its individual components. MSS is widely used as an intermediate step for tasks such as music transcription, remixing, audio restoration, and data preprocessing for recommender systems and other data-hungry AI systems. Currently, the predominant deep-learning-based approach to MSS is to separate the mixed audio track into a small number of instrument categories with a residual "other" category for the rest. Although methods using this approach have shown strong results on benchmark datasets such as MUSDB18, the "other" category remains a major weak point, as many instruments and sounds fall into it. In this thesis, a more generalizable method for MSS is proposed, with the goal of further separating the "other" category. The method relies on repetition pattern discovery using a niching genetic algorithm (GA) and targeted application of median filtering to achieve multi-source separation, both of which are novel contributions in this context. Experiments using the Babyslakh dataset show that the algorithm can identify repeating patterns from various instruments. Furthermore, source separation using targeted median filtering results in a mean SDR of -1.89 dB, primarily limited by bleeding from other sources. While further improvements to the GA are needed, the method shows promise as a generalizable approach to MSS and could complement existing deep-learning methods to further separate the "other" stem.
 
-## Install (uv)
-
-```bash
-uv sync
-```
-
-## Run Gradio App
-
-```bash
-uv run python app.py
-```
-
-The app lets you upload audio, listen to it, tune analysis parameters, and inspect detected repeat groups.
-It also shows a second plot with the self-similarity matrix and highlighted detected diagonals.
-For looped game music, REBEAT attempts to detect a stable global loop period and run heavy analysis on one loop only, then maps detected segments back across the full track with time offsets.
-When loop optimization is active, the app shows an extra spectrogram panel for the analyzed loop segment.
-You can select a `pattern_id` and build a combined playback reel that concatenates all detected instances of that pattern in chronological order.
-
-## Component Activity Analysis App
-
-This separate Gradio app takes a full song and a component stem, finds non-silent intervals in the component using a dBFS threshold (returned as sample index pairs), then analyzes the magnitude distribution on the full-song STFT using those intervals. It also builds a median-based magnitude mask to extract a stem.
-
-Run it:
-
-```bash
-uv run python app_component.py
-```
-
-## Run CLI
-
-```bash
-uv run python main.py /path/to/audio.wav --output output.png --similarity-output similarity.png --autocorr-output onset_autocorr.png
-```
-
-Useful flags:
-
-- `--min-repeat-sec 2.5`
-- `--min-lag-sec 2.0`
-- `--similarity-threshold 0.72`
-- `--max-patterns 12`
-- `--no-mfcc` to use chroma only
+## Installation and Usage
+To install dependencies run ```uv sync```, experiments 1-4 can be found in their respective Jupyter notebook in ```/expiriments```.
